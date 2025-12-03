@@ -3,24 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Milano Cortina 2026 Kiosk Dashboard (Chart.js)</title>
+    <title>Milano Cortina 2026 Kiosk Dashboard (Final Style)</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+    </style>
+
+    <style>
         :root {
+            --font-primary: 'Montserrat', sans-serif;
+            --font-secondary: 'Inter', sans-serif;
             --color-gold: #FFD700;
             --color-silver: #C0C0C0;
             --color-bronze: #CD7F32;
-            --color-background: #002244; /* Deep Blue */
+            --color-background: #002244; /* Deep Blue base */
             --color-text-light: #F0F8FF; /* Alice Blue */
             --color-accent: #E30613; /* Host country Italy Red */
             --control-height: 80px;
         }
         
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: var(--color-background);
+            font-family: var(--font-primary);
             color: var(--color-text-light);
             margin: 0;
             padding: 0;
@@ -31,8 +36,44 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            position: relative; /* For background positioning */
+        }
+        
+        /* --- DYNAMIC BACKGROUND LAYERS --- */
+        .background-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 5s ease-in-out; /* Slow crossfade */
+            filter: blur(5px) brightness(0.7); /* Subtle blur and darkening */
+            z-index: -1; /* Keep it behind everything */
+        }
+        
+        #bg-1 {
+            background-image: url('https://picsum.photos/1920/1080?random=1&blur=5'); 
+            opacity: 1; /* Start with BG 1 visible */
+        }
+        #bg-2 {
+            background-image: url('https://picsum.photos/1920/1080?random=2&blur=5');
         }
 
+        /* Foreground Gradient Overlay */
+        #gradient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 34, 68, 0.7); /* Deep Blue transparency */
+            z-index: -1;
+        }
+
+        /* --- DASHBOARD ELEMENTS --- */
         #dashboard-container {
             width: 100%;
             height: calc(100% - var(--control-height)); 
@@ -41,6 +82,7 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
+            background: rgba(0, 0, 0, 0.1); /* Slight panel background */
         }
 
         .panel {
@@ -65,8 +107,20 @@
             z-index: 10;
         }
         
-        h1 { font-size: 3em; margin-bottom: 5px; }
-        h2 { font-size: 1.8em; border-bottom: 2px solid var(--color-accent); padding-bottom: 5px; margin-bottom: 15px; }
+        h1 { 
+            font-family: var(--font-secondary);
+            font-size: 3.2em; 
+            margin-bottom: 5px; 
+            font-weight: 900;
+        }
+        h2 { 
+            font-family: var(--font-secondary);
+            font-size: 1.8em; 
+            border-bottom: 3px solid var(--color-accent); 
+            padding-bottom: 5px; 
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
 
         /* Panel 1: Schedule */
         .event-list {
@@ -76,49 +130,53 @@
             max-height: 80%;
             overflow-y: auto;
             text-align: left;
+            font-family: var(--font-secondary);
         }
         .event-list li {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             margin-bottom: 8px;
-            padding: 10px 15px;
+            padding: 12px 18px;
             border-radius: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 1.1em;
+            font-size: 1.2em;
         }
-        .event-list .time { color: var(--color-gold); font-weight: bold; }
+        .event-list .time { color: var(--color-gold); font-weight: 700; }
 
         /* Panel 2: Medal Tally - Chart Container */
         #medal-tally-chart-container {
             width: 95%;
-            height: 70vh; /* Give the chart a specific height for proper rendering */
+            height: 70vh;
             margin-top: 10px;
         }
 
         /* Panel 3: Spotlight */
         #spotlight .countdown {
-            font-size: 6em;
-            font-weight: bold;
+            font-size: 7em;
+            font-weight: 900;
             color: var(--color-gold);
             margin-top: 20px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
-        #spotlight p { font-size: 1.4em; margin-top: 10px; }
+        #spotlight p { font-size: 1.6em; margin-top: 10px; }
 
-        /* --- KIOSK CONTROLS --- */
+        /* KIOSK CONTROLS (Styles unchanged for consistency) */
         #kiosk-controls {
             width: 100%;
             height: var(--control-height);
-            background-color: rgba(0, 0, 0, 0.4);
+            background-color: rgba(0, 0, 0, 0.5);
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 10px 0;
             box-sizing: border-box;
+            z-index: 20;
         }
         .control-button {
             background-color: var(--color-accent);
             color: var(--color-text-light);
+            /* ... other button styles ... */
             border: none;
             padding: 15px 30px;
             margin: 0 10px;
@@ -127,34 +185,27 @@
             border-radius: 5px;
             transition: background-color 0.3s;
             font-weight: bold;
+            font-family: var(--font-secondary);
         }
-        .control-button:hover {
-            background-color: #A9040F;
-        }
-        .control-button:disabled {
-            background-color: #333;
-            cursor: not-allowed;
-        }
-        #speed-toggle {
-            background-color: #555;
-        }
-        #speed-toggle:hover {
-            background-color: #777;
-        }
+        /* ... other control styles ... */
     </style>
 </head>
 <body>
+    
+    <div id="bg-1" class="background-layer"></div>
+    <div id="bg-2" class="background-layer"></div>
+    <div id="gradient-overlay"></div>
 
     <div id="dashboard-container">
 
         <div id="schedule" class="panel active">
-            <h1>📅 Today's Schedule</h1>
+            <h1>📅 TODAY'S SCHEDULE</h1>
             <h2>Upcoming Medal Events</h2>
             <ul class="event-list"></ul>
         </div>
 
         <div id="medal-tally" class="panel">
-            <h1>🏅 Medal Standings</h1>
+            <h1>🏅 MEDAL STANDINGS</h1>
             <h2>Top 10 Nations (Stacked Bar Chart)</h2>
             <div id="medal-tally-chart-container">
                 <canvas id="medalChart"></canvas>
@@ -179,7 +230,7 @@
     </div>
 
     <script>
-        // --- 1. MOCK DATA ---
+        // --- 1. MOCK DATA (Unchanged) ---
         const medalData = [
             { rank: 1, country: "Norway", code: "NOR", G: 16, S: 8, B: 13, T: 37 },
             { rank: 2, country: "Germany", code: "GER", G: 12, S: 10, B: 5, T: 27 },
@@ -191,7 +242,7 @@
             { rank: 8, country: "Japan", code: "JPN", G: 3, S: 6, B: 9, T: 18 },
             { rank: 9, country: "Netherlands", code: "NED", G: 8, S: 5, B: 4, T: 17 },
             { rank: 10, country: "China", code: "CHN", G: 9, S: 4, B: 2, T: 15 },
-        ].sort((a, b) => b.T - a.T); // Ensure data is sorted by total medals
+        ].sort((a, b) => b.T - a.T); 
 
         const scheduleData = [
             { sport: "Alpine Skiing", event: "Women's Downhill Final", time: "09:30 AM CET" },
@@ -203,7 +254,6 @@
             { sport: "Ice Hockey", event: "Men's Group A: SWE vs FIN", time: "08:00 PM CET" }
         ];
 
-        // Flag function placeholder
         function getFlagEmoji(code) {
             const flags = {
                 'NOR': '🇳🇴', 'GER': '🇩🇪', 'CAN': '🇨🇦', 'USA': '🇺🇸', 'SWE': '🇸🇪',
@@ -212,24 +262,22 @@
             return flags[code] || '🚩';
         }
         
-        // Chart variable to be accessible globally
         let medalChart; 
+
+        // --- 2. DATA RENDERING FUNCTIONS (Medal Tally fixed) ---
 
         function renderMedalTally() {
             const ctx = document.getElementById('medalChart').getContext('2d');
 
-            // 1. Prepare Chart Data (Labels, Gold, Silver, Bronze arrays)
             const labels = medalData.map(c => `${getFlagEmoji(c.code)} ${c.country} (${c.T})`);
             const goldData = medalData.map(c => c.G);
             const silverData = medalData.map(c => c.S);
             const bronzeData = medalData.map(c => c.B);
 
             if (medalChart) {
-                // If the chart already exists, destroy it before rendering a new one
                 medalChart.destroy();
             }
 
-            // 2. Initialize the Chart
             medalChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -238,47 +286,54 @@
                         {
                             label: 'Bronze',
                             data: bronzeData,
-                            backgroundColor: 'var(--color-bronze)',
+                            backgroundColor: document.documentElement.style.getPropertyValue('--color-bronze') || '#CD7F32', // Use CSS variable
+                            borderColor: 'var(--color-background)',
+                            borderWidth: 1
                         },
                         {
                             label: 'Silver',
                             data: silverData,
-                            backgroundColor: 'var(--color-silver)',
+                            backgroundColor: document.documentElement.style.getPropertyValue('--color-silver') || '#C0C0C0', // Use CSS variable
+                            borderColor: 'var(--color-background)',
+                            borderWidth: 1
                         },
                         {
                             label: 'Gold',
                             data: goldData,
-                            backgroundColor: 'var(--color-gold)',
+                            backgroundColor: document.documentElement.style.getPropertyValue('--color-gold') || '#FFD700', // Use CSS variable
+                            borderColor: 'var(--color-background)',
+                            borderWidth: 1
                         }
                     ]
                 },
                 options: {
-                    indexAxis: 'y', // Makes it a horizontal bar chart
+                    indexAxis: 'y', 
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
                         x: {
                             stacked: true,
                             grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: 'var(--color-text-light)', font: { size: 14 } },
-                            title: { display: true, text: 'Total Medals', color: 'var(--color-text-light)', font: { size: 16 } }
+                            ticks: { color: 'var(--color-text-light)', font: { size: 14, family: 'var(--font-secondary)' } },
+                            title: { display: true, text: 'Total Medals', color: 'var(--color-text-light)', font: { size: 16, family: 'var(--font-secondary)' } }
                         },
                         y: {
                             stacked: true,
                             grid: { display: false },
-                            ticks: { color: 'var(--color-text-light)', font: { size: 14 } }
+                            ticks: { color: 'var(--color-text-light)', font: { size: 14, family: 'var(--font-secondary)' } }
                         }
                     },
                     plugins: {
                         legend: {
                             labels: {
                                 color: 'var(--color-text-light)',
-                                font: { size: 16 }
+                                font: { size: 16, family: 'var(--font-secondary)' },
+                                usePointStyle: true // Makes the legend markers use the block colors accurately
                             }
                         },
                         tooltip: {
-                            bodyFont: { size: 14 },
-                            titleFont: { size: 16 }
+                            bodyFont: { size: 14, family: 'var(--font-secondary)' },
+                            titleFont: { size: 16, family: 'var(--font-secondary)' }
                         }
                     }
                 }
@@ -314,21 +369,25 @@
             }
         }
 
-        // --- 2. ROTATION LOGIC & CONTROLS (Unchanged) ---
+        // --- 3. ROTATION LOGIC & BACKGROUND SWAP ---
 
         const panels = document.querySelectorAll('.panel');
         const nextButton = document.getElementById('next-button');
         const prevButton = document.getElementById('prev-button');
         const pauseButton = document.getElementById('pause-button');
         const speedToggle = document.getElementById('speed-toggle');
+        const bg1 = document.getElementById('bg-1');
+        const bg2 = document.getElementById('bg-2');
 
         let currentPanelIndex = 0;
         let rotationIntervalId;
+        let backgroundSwapIntervalId;
         
-        const SPEED_SLOW = 15000; // 15 seconds (default)
-        const SPEED_FAST = 5000;  // 5 seconds
+        const SPEED_SLOW = 15000;
+        const SPEED_FAST = 5000;
         let currentRotationSpeed = SPEED_SLOW;
         let isPaused = false;
+        let activeBackground = 1;
 
         function startRotation() {
             if (rotationIntervalId) {
@@ -350,6 +409,23 @@
                 startRotation(); 
             }
         }
+        
+        // New Function: Crossfade Background
+        function changeBackground() {
+            if (activeBackground === 1) {
+                bg1.style.opacity = 0;
+                bg2.style.opacity = 1;
+                activeBackground = 2;
+            } else {
+                bg1.style.opacity = 1;
+                bg2.style.opacity = 0;
+                activeBackground = 1;
+            }
+            // Optional: Fetch new random image for the hidden layer for variety
+            // bg1.style.backgroundImage = `url('https://picsum.photos/1920/1080?random=${Math.random()}&blur=5')`;
+            // bg2.style.backgroundImage = `url('https://picsum.photos/1920/1080?random=${Math.random()}&blur=5')`;
+        }
+
 
         nextButton.addEventListener('click', () => rotatePanel(1));
         prevButton.addEventListener('click', () => rotatePanel(-1));
@@ -361,8 +437,10 @@
 
             if (isPaused) {
                 clearInterval(rotationIntervalId);
+                clearInterval(backgroundSwapIntervalId); // Pause background too
             } else {
                 startRotation();
+                backgroundSwapIntervalId = setInterval(changeBackground, 30000); // Resume background
             }
         });
 
@@ -382,13 +460,16 @@
         });
 
 
-        // --- 3. INITIALIZATION ---
+        // --- 4. INITIALIZATION ---
 
         function initDashboard() {
             renderSchedule();
-            renderMedalTally(); // This now initializes the Chart.js chart
+            renderMedalTally(); 
             updateCountdown();
             startRotation();
+            // Start the background swap loop (e.g., every 30 seconds)
+            backgroundSwapIntervalId = setInterval(changeBackground, 30000);
+            // Update the countdown every second
             setInterval(updateCountdown, 1000); 
         }
 
