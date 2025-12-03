@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milano Cortina 2026 Kiosk Dashboard (Chart.js)</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --color-gold: #FFD700;
+            --color-silver: #C0C0C0;
+            --color-bronze: #CD7F32;
+            --color-background: #002244; /* Deep Blue */
+            --color-text-light: #F0F8FF; /* Alice Blue */
+            --color-accent: #E30613; /* Host country Italy Red */
+            --control-height: 80px;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text-light);
+            margin: 0;
+            padding: 0;
+            overflow: hidden; 
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #dashboard-container {
+            width: 100%;
+            height: calc(100% - var(--control-height)); 
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 30px 50px;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .panel.active {
+            opacity: 1;
+            z-index: 10;
+        }
+        
+        h1 { font-size: 3em; margin-bottom: 5px; }
+        h2 { font-size: 1.8em; border-bottom: 2px solid var(--color-accent); padding-bottom: 5px; margin-bottom: 15px; }
+
+        /* Panel 1: Schedule */
+        .event-list {
+            list-style: none;
+            padding: 0;
+            width: 95%;
+            max-height: 80%;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .event-list li {
+            background: rgba(255, 255, 255, 0.1);
+            margin-bottom: 8px;
+            padding: 10px 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1em;
+        }
+        .event-list .time { color: var(--color-gold); font-weight: bold; }
+
+        /* Panel 2: Medal Tally - Chart Container */
+        #medal-tally-chart-container {
+            width: 95%;
+            height: 70vh; /* Give the chart a specific height for proper rendering */
+            margin-top: 10px;
+        }
+
+        /* Panel 3: Spotlight */
+        #spotlight .countdown {
+            font-size: 6em;
+            font-weight: bold;
+            color: var(--color-gold);
+            margin-top: 20px;
+        }
+        #spotlight p { font-size: 1.4em; margin-top: 10px; }
+
+        /* --- KIOSK CONTROLS --- */
+        #kiosk-controls {
+            width: 100%;
+            height: var(--control-height);
+            background-color: rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 0;
+            box-sizing: border-box;
+        }
+        .control-button {
+            background-color: var(--color-accent);
+            color: var(--color-text-light);
+            border: none;
+            padding: 15px 30px;
+            margin: 0 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+        .control-button:hover {
+            background-color: #A9040F;
+        }
+        .control-button:disabled {
+            background-color: #333;
+            cursor: not-allowed;
+        }
+        #speed-toggle {
+            background-color: #555;
+        }
+        #speed-toggle:hover {
+            background-color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="dashboard-container">
+
+        <div id="schedule" class="panel active">
+            <h1>📅 Today's Schedule</h1>
+            <h2>Upcoming Medal Events</h2>
+            <ul class="event-list"></ul>
+        </div>
+
+        <div id="medal-tally" class="panel">
+            <h1>🏅 Medal Standings</h1>
+            <h2>Top 10 Nations (Stacked Bar Chart)</h2>
+            <div id="medal-tally-chart-container">
+                <canvas id="medalChart"></canvas>
+            </div>
+        </div>
+
+        <div id="spotlight" class="panel">
+            <div class="logo">🇮🇹🏔️</div>
+            <h1>MILANO CORTINA 2026</h1>
+            <h2>Countdown to the Games</h2>
+            <div id="countdown-timer" class="countdown">-- days --</div>
+            <p>February 6 – 22, 2026</p>
+        </div>
+
+    </div>
+
+    <div id="kiosk-controls">
+        <button id="prev-button" class="control-button">⬅️ BACK</button>
+        <button id="pause-button" class="control-button">⏸️ PAUSE</button>
+        <button id="next-button" class="control-button">FORWARD ➡️</button>
+        <button id="speed-toggle" class="control-button">🐢 SLOW SWAP (15s)</button>
+    </div>
+
+    <script>
+        // --- 1. MOCK DATA ---
+        const medalData = [
+            { rank: 1, country: "Norway", code: "NOR", G: 16, S: 8, B: 13, T: 37 },
+            { rank: 2, country: "Germany", code: "GER", G: 12, S: 10, B: 5, T: 27 },
+            { rank: 3, country: "Canada", code: "CAN", G: 4, S: 8, B: 14, T: 26 },
+            { rank: 4, country: "USA", code: "USA", G: 8, S: 10, B: 7, T: 25 },
+            { rank: 5, country: "Sweden", code: "SWE", G: 8, S: 5, B: 5, T: 18 },
+            { rank: 6, country: "Austria", code: "AUT", G: 7, S: 7, B: 4, T: 18 },
+            { rank: 7, country: "Italy", code: "ITA", G: 2, S: 7, B: 8, T: 17 },
+            { rank: 8, country: "Japan", code: "JPN", G: 3, S: 6, B: 9, T: 18 },
+            { rank: 9, country: "Netherlands", code: "NED", G: 8, S: 5, B: 4, T: 17 },
+            { rank: 10, country: "China", code: "CHN", G: 9, S: 4, B: 2, T: 15 },
+        ].sort((a, b) => b.T - a.T); // Ensure data is sorted by total medals
+
+        const scheduleData = [
+            { sport: "Alpine Skiing", event: "Women's Downhill Final", time: "09:30 AM CET" },
+            { sport: "Curling", event: "Men's Gold Medal Match", time: "11:00 AM CET" },
+            { sport: "Biathlon", event: "Mixed 4x6km Relay", time: "01:30 PM CET" },
+            { sport: "Figure Skating", event: "Ice Dance Free Skate", time: "03:00 PM CET" },
+            { sport: "Speed Skating", event: "Men's 500m Final", time: "04:30 PM CET" },
+            { sport: "Bobsleigh", event: "Women's Monobob Run 3", time: "06:00 PM CET" },
+            { sport: "Ice Hockey", event: "Men's Group A: SWE vs FIN", time: "08:00 PM CET" }
+        ];
+
+        // Flag function placeholder
+        function getFlagEmoji(code) {
+            const flags = {
+                'NOR': '🇳🇴', 'GER': '🇩🇪', 'CAN': '🇨🇦', 'USA': '🇺🇸', 'SWE': '🇸🇪',
+                'AUT': '🇦🇹', 'ITA': '🇮🇹', 'JPN': '🇯🇵', 'NED': '🇳🇱', 'CHN': '🇨🇳'
+            };
+            return flags[code] || '🚩';
+        }
+        
+        // Chart variable to be accessible globally
+        let medalChart; 
+
+        function renderMedalTally() {
+            const ctx = document.getElementById('medalChart').getContext('2d');
+
+            // 1. Prepare Chart Data (Labels, Gold, Silver, Bronze arrays)
+            const labels = medalData.map(c => `${getFlagEmoji(c.code)} ${c.country} (${c.T})`);
+            const goldData = medalData.map(c => c.G);
+            const silverData = medalData.map(c => c.S);
+            const bronzeData = medalData.map(c => c.B);
+
+            if (medalChart) {
+                // If the chart already exists, destroy it before rendering a new one
+                medalChart.destroy();
+            }
+
+            // 2. Initialize the Chart
+            medalChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Bronze',
+                            data: bronzeData,
+                            backgroundColor: 'var(--color-bronze)',
+                        },
+                        {
+                            label: 'Silver',
+                            data: silverData,
+                            backgroundColor: 'var(--color-silver)',
+                        },
+                        {
+                            label: 'Gold',
+                            data: goldData,
+                            backgroundColor: 'var(--color-gold)',
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y', // Makes it a horizontal bar chart
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: 'var(--color-text-light)', font: { size: 14 } },
+                            title: { display: true, text: 'Total Medals', color: 'var(--color-text-light)', font: { size: 16 } }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: { display: false },
+                            ticks: { color: 'var(--color-text-light)', font: { size: 14 } }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'var(--color-text-light)',
+                                font: { size: 16 }
+                            }
+                        },
+                        tooltip: {
+                            bodyFont: { size: 14 },
+                            titleFont: { size: 16 }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderSchedule() {
+            const list = document.querySelector('#schedule .event-list');
+            list.innerHTML = '';
+            scheduleData.forEach(event => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <span class="sport">${event.sport}: ${event.event}</span>
+                    <span class="time">${event.time}</span>
+                `;
+                list.appendChild(listItem);
+            });
+        }
+
+        function updateCountdown() {
+            const targetDate = new Date("Feb 6, 2026 00:00:00 EST").getTime();
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            
+            const countdownEl = document.getElementById("countdown-timer");
+
+            if (distance < 0) {
+                countdownEl.innerHTML = "GAMES ARE LIVE!";
+            } else {
+                countdownEl.innerHTML = `${days} Days to Go`;
+            }
+        }
+
+        // --- 2. ROTATION LOGIC & CONTROLS (Unchanged) ---
+
+        const panels = document.querySelectorAll('.panel');
+        const nextButton = document.getElementById('next-button');
+        const prevButton = document.getElementById('prev-button');
+        const pauseButton = document.getElementById('pause-button');
+        const speedToggle = document.getElementById('speed-toggle');
+
+        let currentPanelIndex = 0;
+        let rotationIntervalId;
+        
+        const SPEED_SLOW = 15000; // 15 seconds (default)
+        const SPEED_FAST = 5000;  // 5 seconds
+        let currentRotationSpeed = SPEED_SLOW;
+        let isPaused = false;
+
+        function startRotation() {
+            if (rotationIntervalId) {
+                clearInterval(rotationIntervalId);
+            }
+            if (!isPaused) {
+                rotationIntervalId = setInterval(rotatePanel, currentRotationSpeed);
+            }
+        }
+
+        function rotatePanel(direction = 1) {
+            panels[currentPanelIndex].classList.remove('active');
+            
+            currentPanelIndex = (currentPanelIndex + direction + panels.length) % panels.length;
+            
+            panels[currentPanelIndex].classList.add('active');
+
+            if (!isPaused) {
+                startRotation(); 
+            }
+        }
+
+        nextButton.addEventListener('click', () => rotatePanel(1));
+        prevButton.addEventListener('click', () => rotatePanel(-1));
+        
+        pauseButton.addEventListener('click', () => {
+            isPaused = !isPaused;
+            pauseButton.textContent = isPaused ? '▶️ PLAY' : '⏸️ PAUSE';
+            pauseButton.style.backgroundColor = isPaused ? '#00A86B' : 'var(--color-accent)';
+
+            if (isPaused) {
+                clearInterval(rotationIntervalId);
+            } else {
+                startRotation();
+            }
+        });
+
+        speedToggle.addEventListener('click', () => {
+            if (currentRotationSpeed === SPEED_SLOW) {
+                currentRotationSpeed = SPEED_FAST;
+                speedToggle.textContent = '🚀 FAST SWAP (5s)';
+                speedToggle.style.backgroundColor = '#0070c0';
+            } else {
+                currentRotationSpeed = SPEED_SLOW;
+                speedToggle.textContent = '🐢 SLOW SWAP (15s)';
+                speedToggle.style.backgroundColor = '#555';
+            }
+            if (!isPaused) {
+                startRotation(); 
+            }
+        });
+
+
+        // --- 3. INITIALIZATION ---
+
+        function initDashboard() {
+            renderSchedule();
+            renderMedalTally(); // This now initializes the Chart.js chart
+            updateCountdown();
+            startRotation();
+            setInterval(updateCountdown, 1000); 
+        }
+
+        document.addEventListener('DOMContentLoaded', initDashboard);
+
+    </script>
+</body>
+</html>
