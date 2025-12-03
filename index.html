@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Milano Cortina 2026 Kiosk Dashboard (Final Style)</title>
+    <title>Milano Cortina 2026 Kiosk Dashboard (Final)</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     
@@ -36,10 +36,10 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            position: relative; /* For background positioning */
+            position: relative;
         }
         
-        /* --- DYNAMIC BACKGROUND LAYERS --- */
+        /* --- DYNAMIC BACKGROUND LAYERS (Using Local Images) --- */
         .background-layer {
             position: absolute;
             top: 0;
@@ -49,17 +49,19 @@
             background-size: cover;
             background-position: center;
             opacity: 0;
-            transition: opacity 5s ease-in-out; /* Slow crossfade */
-            filter: blur(5px) brightness(0.7); /* Subtle blur and darkening */
-            z-index: -1; /* Keep it behind everything */
+            transition: opacity 1s ease-in-out; /* Faster crossfade with panel rotation */
+            filter: blur(5px) brightness(0.7);
+            z-index: -1;
         }
         
         #bg-1 {
-            background-image: url('https://picsum.photos/1920/1080?random=1&blur=5'); 
-            opacity: 1; /* Start with BG 1 visible */
+            /* Using your first local image */
+            background-image: url('./img/001.jpg'); 
+            opacity: 1; 
         }
         #bg-2 {
-            background-image: url('https://picsum.photos/1920/1080?random=2&blur=5');
+            /* Using your second local image */
+            background-image: url('./img/002.jpg');
         }
 
         /* Foreground Gradient Overlay */
@@ -69,7 +71,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 34, 68, 0.7); /* Deep Blue transparency */
+            background: rgba(0, 34, 68, 0.7);
             z-index: -1;
         }
 
@@ -82,7 +84,7 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            background: rgba(0, 0, 0, 0.1); /* Slight panel background */
+            background: rgba(0, 0, 0, 0.1);
         }
 
         .panel {
@@ -161,7 +163,7 @@
         }
         #spotlight p { font-size: 1.6em; margin-top: 10px; }
 
-        /* KIOSK CONTROLS (Styles unchanged for consistency) */
+        /* KIOSK CONTROLS */
         #kiosk-controls {
             width: 100%;
             height: var(--control-height);
@@ -176,7 +178,6 @@
         .control-button {
             background-color: var(--color-accent);
             color: var(--color-text-light);
-            /* ... other button styles ... */
             border: none;
             padding: 15px 30px;
             margin: 0 10px;
@@ -187,7 +188,19 @@
             font-weight: bold;
             font-family: var(--font-secondary);
         }
-        /* ... other control styles ... */
+        .control-button:hover {
+            background-color: #A9040F;
+        }
+        .control-button:disabled {
+            background-color: #333;
+            cursor: not-allowed;
+        }
+        #speed-toggle {
+            background-color: #555;
+        }
+        #speed-toggle:hover {
+            background-color: #777;
+        }
     </style>
 </head>
 <body>
@@ -264,11 +277,10 @@
         
         let medalChart; 
 
-        // --- 2. DATA RENDERING FUNCTIONS (Medal Tally fixed) ---
+        // --- 2. DATA RENDERING FUNCTIONS ---
 
         function renderMedalTally() {
             const ctx = document.getElementById('medalChart').getContext('2d');
-
             const labels = medalData.map(c => `${getFlagEmoji(c.code)} ${c.country} (${c.T})`);
             const goldData = medalData.map(c => c.G);
             const silverData = medalData.map(c => c.S);
@@ -286,21 +298,21 @@
                         {
                             label: 'Bronze',
                             data: bronzeData,
-                            backgroundColor: document.documentElement.style.getPropertyValue('--color-bronze') || '#CD7F32', // Use CSS variable
+                            backgroundColor: document.documentElement.style.getPropertyValue('--color-bronze') || '#CD7F32',
                             borderColor: 'var(--color-background)',
                             borderWidth: 1
                         },
                         {
                             label: 'Silver',
                             data: silverData,
-                            backgroundColor: document.documentElement.style.getPropertyValue('--color-silver') || '#C0C0C0', // Use CSS variable
+                            backgroundColor: document.documentElement.style.getPropertyValue('--color-silver') || '#C0C0C0',
                             borderColor: 'var(--color-background)',
                             borderWidth: 1
                         },
                         {
                             label: 'Gold',
                             data: goldData,
-                            backgroundColor: document.documentElement.style.getPropertyValue('--color-gold') || '#FFD700', // Use CSS variable
+                            backgroundColor: document.documentElement.style.getPropertyValue('--color-gold') || '#FFD700',
                             borderColor: 'var(--color-background)',
                             borderWidth: 1
                         }
@@ -328,7 +340,7 @@
                             labels: {
                                 color: 'var(--color-text-light)',
                                 font: { size: 16, family: 'var(--font-secondary)' },
-                                usePointStyle: true // Makes the legend markers use the block colors accurately
+                                usePointStyle: true
                             }
                         },
                         tooltip: {
@@ -381,7 +393,6 @@
 
         let currentPanelIndex = 0;
         let rotationIntervalId;
-        let backgroundSwapIntervalId;
         
         const SPEED_SLOW = 15000;
         const SPEED_FAST = 5000;
@@ -397,21 +408,9 @@
                 rotationIntervalId = setInterval(rotatePanel, currentRotationSpeed);
             }
         }
-
-        function rotatePanel(direction = 1) {
-            panels[currentPanelIndex].classList.remove('active');
-            
-            currentPanelIndex = (currentPanelIndex + direction + panels.length) % panels.length;
-            
-            panels[currentPanelIndex].classList.add('active');
-
-            if (!isPaused) {
-                startRotation(); 
-            }
-        }
         
-        // New Function: Crossfade Background
-        function changeBackground() {
+        // Function to handle the background image swap tied to panel rotation
+        function changeBackgroundOnPanelCycle() {
             if (activeBackground === 1) {
                 bg1.style.opacity = 0;
                 bg2.style.opacity = 1;
@@ -421,11 +420,22 @@
                 bg2.style.opacity = 0;
                 activeBackground = 1;
             }
-            // Optional: Fetch new random image for the hidden layer for variety
-            // bg1.style.backgroundImage = `url('https://picsum.photos/1920/1080?random=${Math.random()}&blur=5')`;
-            // bg2.style.backgroundImage = `url('https://picsum.photos/1920/1080?random=${Math.random()}&blur=5')`;
         }
 
+        function rotatePanel(direction = 1) {
+            panels[currentPanelIndex].classList.remove('active');
+            
+            currentPanelIndex = (currentPanelIndex + direction + panels.length) % panels.length;
+            
+            panels[currentPanelIndex].classList.add('active');
+
+            // Trigger background change on every panel rotation
+            changeBackgroundOnPanelCycle();
+
+            if (!isPaused) {
+                startRotation(); 
+            }
+        }
 
         nextButton.addEventListener('click', () => rotatePanel(1));
         prevButton.addEventListener('click', () => rotatePanel(-1));
@@ -437,10 +447,8 @@
 
             if (isPaused) {
                 clearInterval(rotationIntervalId);
-                clearInterval(backgroundSwapIntervalId); // Pause background too
             } else {
                 startRotation();
-                backgroundSwapIntervalId = setInterval(changeBackground, 30000); // Resume background
             }
         });
 
@@ -467,9 +475,7 @@
             renderMedalTally(); 
             updateCountdown();
             startRotation();
-            // Start the background swap loop (e.g., every 30 seconds)
-            backgroundSwapIntervalId = setInterval(changeBackground, 30000);
-            // Update the countdown every second
+            // Only update the countdown every second
             setInterval(updateCountdown, 1000); 
         }
 
