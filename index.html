@@ -107,6 +107,8 @@
         }
 
         /* --- CUSTOM TOOLTIP CSS --- */
+        /* NOTE: The tooltip is appended to #medal-tally-chart-container, 
+           so its position: absolute is relative to that container. */
         #chartjs-tooltip {
             opacity: 0;
             pointer-events: none; 
@@ -210,7 +212,7 @@
             width: 95%;
             height: 70vh;
             margin-top: 10px;
-            /* Removed z-index and position fixes as they are now handled by custom tooltip */
+            position: relative; /* <-- FIX: Set container to relative for proper absolute positioning of the tooltip */
         }
         
         #view-toggles {
@@ -461,11 +463,10 @@
             // Tooltip Element Reference
             let tooltipEl = document.getElementById('chartjs-tooltip');
             const chart = context.chart;
-            const container = chart.canvas.parentNode; // The medal-tally-chart-container
+            const container = document.getElementById('medal-tally-chart-container'); // Explicitly reference the parent container
 
-            if (!tooltipEl) {
-                tooltipEl = document.createElement('div');
-                tooltipEl.id = 'chartjs-tooltip';
+            // If the element is not yet a child of the container (which it should be), append it now.
+            if (!container.contains(tooltipEl)) {
                 container.appendChild(tooltipEl);
             }
 
@@ -506,15 +507,14 @@
             }
 
             // Calculate position
-            const {offsetLeft: chartX, offsetTop: chartY} = chart.canvas;
-            
-            // Adjust X position to place tooltip to the right of the pointer
-            let x = chartX + tooltipModel.caretX + 15;
-            let y = chartY + tooltipModel.caretY - tooltipEl.clientHeight / 2;
+            // FIX: Remove chart.canvas offsets (chartX, chartY) because tooltipEl is now positioned 
+            // absolutely relative to its parent (#medal-tally-chart-container), which is 'position: relative'.
+            let x = tooltipModel.caretX + 15;
+            let y = tooltipModel.caretY - tooltipEl.clientHeight / 2;
 
-            // Boundary check: move left if too close to the right edge
-            if (x + tooltipEl.clientWidth > chartX + chart.width) {
-                x = chartX + tooltipModel.caretX - tooltipEl.clientWidth - 15;
+            // Boundary check: move left if too close to the right edge of the chart area
+            if (x + tooltipEl.clientWidth > chart.width) {
+                x = tooltipModel.caretX - tooltipEl.clientWidth - 15;
             }
             
             // Set position and show
