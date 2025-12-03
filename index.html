@@ -457,9 +457,11 @@
             
             const textColor = document.documentElement.style.getPropertyValue('--color-text-light') || '#F0F8FF';
 
-            if (medalChart) {
+            // --- CRITICAL FIX: Ensure complete destruction before creation ---
+            if (medalChart instanceof Chart) {
                 medalChart.destroy();
             }
+            // -----------------------------------------------------------------
 
             medalChart = new Chart(ctx, {
                 type: 'bar',
@@ -515,16 +517,15 @@
                             }
                         },
                         tooltip: {
-                            // --- CRITICAL FIX: Explicitly enabling the plugin ---
+                            // --- Explicit activation and styling for visibility ---
                             enabled: true, 
-                            // --- Styling for Visibility ---
                             color: textColor,
                             backgroundColor: 'rgba(0, 34, 68, 0.95)',
                             borderColor: 'var(--color-gold)',
                             borderWidth: 1,
                             bodyColor: textColor,
                             titleColor: textColor,
-                            // -----------------------------
+                            // -----------------------------------------------------
                             bodyFont: { size: chartFontSizeBase, family: 'var(--font-primary)' },
                             titleFont: { size: chartFontSizeHeading, family: 'var(--font-heading)' }
                         }
