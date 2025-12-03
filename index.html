@@ -107,8 +107,6 @@
         }
 
         /* --- CUSTOM TOOLTIP CSS --- */
-        /* NOTE: The tooltip is appended to #medal-tally-chart-container, 
-           so its position: absolute is relative to that container. */
         #chartjs-tooltip {
             opacity: 0;
             pointer-events: none; 
@@ -212,7 +210,7 @@
             width: 95%;
             height: 70vh;
             margin-top: 10px;
-            position: relative; /* <-- FIX: Set container to relative for proper absolute positioning of the tooltip */
+            position: relative; /* CRITICAL: Sets the positioning context for the absolute tooltip */
         }
         
         #view-toggles {
@@ -460,55 +458,68 @@
         
         // --- CUSTOM TOOLTIP FUNCTION ---
         function customTooltip(context) {
-            // Tooltip Element Reference
             let tooltipEl = document.getElementById('chartjs-tooltip');
             const chart = context.chart;
-            const container = document.getElementById('medal-tally-chart-container'); // Explicitly reference the parent container
+            const container = document.getElementById('medal-tally-chart-container');
 
-            // If the element is not yet a child of the container (which it should be), append it now.
             if (!container.contains(tooltipEl)) {
                 container.appendChild(tooltipEl);
             }
 
             const tooltipModel = context.tooltip;
 
-            // Hide if no tooltip
             if (tooltipModel.opacity === 0) {
                 tooltipEl.style.opacity = 0;
                 return;
             }
 
-            // Set text content
-            if (tooltipModel.body) {
-                const titleLines = tooltipModel.title || [];
-                const bodyLines = tooltipModel.body.map(b => b.lines);
-
+            // --- FIX: Use dataPoints to get specific medal data ---
+            if (tooltipModel.dataPoints && tooltipModel.dataPoints.length > 0) {
+                // The title is the country name (same for all segments of the bar)
+                const title = tooltipModel.title[0] || '';
+                
                 let innerHtml = '<div>';
                 
-                titleLines.forEach(function(title) {
-                    // Extract country code from label for flag
-                    const codeMatch = title.match(/\(([A-Z]+)\)/);
-                    const code = codeMatch ? codeMatch[1] : '';
-                    const flag = getFlagEmoji(code);
-                    
-                    innerHtml += '<div style="font-weight: 700; font-size: 1.2em; border-bottom: 1px solid var(--color-gold); padding-bottom: 5px; margin-bottom: 5px;">' + flag + ' ' + title + '</div>';
-                });
+                // Title (Country Name)
+                const codeMatch = title.match(/\(([A-Z]+)\)/);
+                const code = codeMatch ? codeMatch[1] : '';
+                const flag = getFlagEmoji(code);
+                
+                innerHtml += '<div style="font-weight: 700; font-size: 1.2em; border-bottom: 1px solid var(--color-gold); padding-bottom: 5px; margin-bottom: 5px;">' + flag + ' ' + title + '</div>';
 
-                bodyLines.forEach(function(body, i) {
+                // Content (Medal and Count) - We only want the specific medal being hovered.
+                // In stacked bar mode, Chart.js returns ALL datasets at that index, 
+                // but for custom tooltips, we usually just want the single hovered item for a better UX.
+                // In the default 'index' mode, it will return all of them if not specified otherwise.
+                
+                // Since we are setting mode: 'index' AND intersect: false, 
+                // dataPoints will contain ALL three medals for the *row*, which is often desirable for a summary.
+                
+                // Let's iterate through all data points for that country row:
+                tooltipModel.dataPoints.forEach(function(dataPoint) {
+                    const label = dataPoint.dataset.label;
+                    const value = dataPoint.formattedValue;
+                    const color = dataPoint.dataset.backgroundColor;
+                    
                     innerHtml += '<div style="margin: 3px 0; display: flex; justify-content: space-between;">';
-                    // Use list item color as a square marker
-                    innerHtml += '<span style="display: inline-block; width: 10px; height: 10px; margin-right: 5px; background-color:' + tooltipModel.labelColors[i].backgroundColor + ';"></span>';
-                    innerHtml += body[0];
+                    innerHtml += '<span style="display: inline-block; width: 10px; height: 10px; margin-right: 5px; background-color:' + color + ';"></span>';
+                    innerHtml += '<span>' + label + '</span>';
+                    innerHtml += '<span>' + value + '</span>';
                     innerHtml += '</div>';
                 });
+
+                // Add Total at the bottom
+                const total = tooltipModel.dataPoints.reduce((sum, dp) => sum + dp.parsed.x, 0);
+                innerHtml += '<div style="font-weight: 700; margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--color-gold); display: flex; justify-content: space-between;">';
+                innerHtml += '<span>TOTAL:</span>';
+                innerHtml += '<span>' + total + '</span>';
+                innerHtml += '</div>';
 
                 innerHtml += '</div>';
                 tooltipEl.innerHTML = innerHtml;
             }
 
-            // Calculate position
-            // FIX: Remove chart.canvas offsets (chartX, chartY) because tooltipEl is now positioned 
-            // absolutely relative to its parent (#medal-tally-chart-container), which is 'position: relative'.
+            // Calculate position relative to the chart container (which is position: relative)
             let x = tooltipModel.caretX + 15;
             let y = tooltipModel.caretY - tooltipEl.clientHeight / 2;
 
@@ -567,6 +578,7 @@
             const chartFontSizeBase = getComputedFontSize(1.2); 
             const chartFontSizeHeading = getComputedFontSize(1.6); 
 
+            // Labels include the total medal count in parentheses
             const labels = currentData.map(c => `${getFlagEmoji(c.code)} ${c.country} (${c.T})`);
             const goldData = currentData.map(c => c.G);
             const silverData = currentData.map(c => c.S);
@@ -635,12 +647,12 @@
                             }
                         },
                         tooltip: {
-                            // --- CRITICAL FIX: Disable built-in tooltip and use custom function ---
+                            // The key is to use a mode that targets the country row, 
+                            // even if a specific bar segment is hovered. 'index' is correct for horizontal bars.
                             enabled: false,
                             external: customTooltip,
                             mode: 'index',
                             intersect: false 
-                            // ---------------------------------------------------------------------
                         }
                     },
                     // Hide custom tooltip when not hovering over the chart area
