@@ -194,6 +194,9 @@
             width: 95%;
             height: 70vh;
             margin-top: 10px;
+            /* FIX: Ensure tooltips render above the canvas */
+            position: relative; 
+            z-index: 1;
         }
 
         /* Panel 3: Spotlight */
@@ -512,14 +515,14 @@
                             }
                         },
                         tooltip: {
-                            // --- Tooltip Styling Fix: Added top-level color and explicit background/border/text colors ---
-                            color: textColor,
+                            // --- Tooltip Styling Fix ---
+                            color: textColor, // Ensures text color is white
                             backgroundColor: 'rgba(0, 34, 68, 0.95)',
                             borderColor: 'var(--color-gold)',
                             borderWidth: 1,
                             bodyColor: textColor,
                             titleColor: textColor,
-                            // ------------------------------------------------------------------------------------------
+                            // ---------------------------
                             bodyFont: { size: chartFontSizeBase, family: 'var(--font-primary)' },
                             titleFont: { size: chartFontSizeHeading, family: 'var(--font-heading)' }
                         }
