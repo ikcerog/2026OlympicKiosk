@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Milano Cortina 2026 Kiosk Dashboard (TASA Explorer Font)</title>
+    <title>Milano Cortina 2026 Kiosk Dashboard (Responsive)</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     
@@ -13,8 +13,8 @@
 
     <style>
         :root {
-            --font-primary: 'Inter', sans-serif; /* For body/general text */
-            --font-heading: 'TASA Explorer', sans-serif; /* For titles and key numbers */
+            --font-primary: 'Inter', sans-serif;
+            --font-heading: 'TASA Explorer', sans-serif;
             --color-gold: #FFD700;
             --color-silver: #C0C0C0;
             --color-bronze: #CD7F32;
@@ -22,6 +22,12 @@
             --color-text-light: #F0F8FF;
             --color-accent: #E30613;
             --control-height: 80px;
+            
+            /* Base Font Sizes (using viewport units for dynamic scaling) */
+            --font-size-h1: 3.5vw;
+            --font-size-h2: 2.0vw;
+            --font-size-base: 1.5vw;
+            --font-size-lg: 1.8vw;
         }
         
         body {
@@ -54,13 +60,8 @@
             z-index: -1;
         }
         
-        #bg-1 {
-            background-image: url('./img/001.jpg'); 
-            opacity: 1; 
-        }
-        #bg-2 {
-            background-image: url('./img/002.jpg');
-        }
+        #bg-1 { background-image: url('./img/001.jpg'); opacity: 1; }
+        #bg-2 { background-image: url('./img/002.jpg'); }
 
         /* Foreground Gradient Overlay */
         #gradient-overlay {
@@ -108,18 +109,24 @@
         }
         
         h1 { 
-            font-family: var(--font-heading); /* Applied TASA Explorer */
-            font-size: 3.2em; 
+            font-family: var(--font-heading); 
+            font-size: var(--font-size-h1); /* Dynamic sizing */
             margin-bottom: 5px; 
-            font-weight: 800; /* Set a bold weight */
+            font-weight: 800;
         }
         h2 { 
-            font-family: var(--font-heading); /* Applied TASA Explorer */
-            font-size: 1.8em; 
+            font-family: var(--font-heading); 
+            font-size: var(--font-size-h2); /* Dynamic sizing */
             border-bottom: 3px solid var(--color-accent); 
             padding-bottom: 5px; 
             margin-bottom: 20px;
-            font-weight: 600; /* Slightly lighter weight */
+            font-weight: 600;
+        }
+
+        /* Emojis/Flags in Panel Text */
+        .event-list .sport::before, .flag-emoji, #spotlight .logo {
+            font-size: var(--font-size-lg); 
+            margin-right: 10px;
         }
 
         /* Panel 1: Schedule */
@@ -140,12 +147,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 1.2em;
+            font-size: var(--font-size-base); /* Dynamic sizing */
         }
         .event-list .time { 
             color: var(--color-gold); 
             font-weight: 700; 
-            font-family: var(--font-heading); /* Use TASA Explorer for time numbers */
+            font-family: var(--font-heading); 
+            font-size: var(--font-size-lg);
         }
 
         /* Panel 2: Medal Tally - Chart Container */
@@ -157,14 +165,14 @@
 
         /* Panel 3: Spotlight */
         #spotlight .countdown {
-            font-size: 7em;
+            font-size: 8vw; /* Very large and dynamic */
             font-weight: 800;
-            font-family: var(--font-heading); /* Applied TASA Explorer */
+            font-family: var(--font-heading); 
             color: var(--color-gold);
             margin-top: 20px;
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
-        #spotlight p { font-size: 1.6em; margin-top: 10px; }
+        #spotlight p { font-size: var(--font-size-lg); margin-top: 10px; }
 
         /* KIOSK CONTROLS */
         #kiosk-controls {
@@ -184,25 +192,52 @@
             border: none;
             padding: 15px 30px;
             margin: 0 10px;
-            font-size: 1.2em;
+            font-size: 1.2vw; /* Dynamic sizing for buttons */
             cursor: pointer;
             border-radius: 5px;
             transition: background-color 0.3s;
             font-weight: 600;
-            font-family: var(--font-heading); /* Applied TASA Explorer to buttons */
+            font-family: var(--font-heading);
         }
-        .control-button:hover {
-            background-color: #A9040F;
-        }
-        .control-button:disabled {
-            background-color: #333;
-            cursor: not-allowed;
-        }
-        #speed-toggle {
-            background-color: #555;
-        }
-        #speed-toggle:hover {
-            background-color: #777;
+        
+        /* --- MOBILE/VERTICAL SCREEN STYLING (Responsive Flow) --- */
+        @media (max-width: 768px), (orientation: portrait) {
+            :root {
+                --font-size-h1: 7vw;
+                --font-size-h2: 4.5vw;
+                --font-size-base: 3.5vw;
+                --font-size-lg: 4.5vw;
+                --control-height: 10vh;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+            
+            /* Adjust countdown size for portrait */
+            #spotlight .countdown {
+                font-size: 15vw;
+            }
+            
+            /* Stack controls vertically or wrap them */
+            #kiosk-controls {
+                flex-wrap: wrap;
+                justify-content space-around;
+                padding: 5px;
+            }
+
+            .control-button {
+                padding: 10px 15px;
+                margin: 5px;
+                font-size: 3vw;
+                flex-grow: 1; /* Allow buttons to expand */
+                min-width: 40%;
+            }
+            
+            /* Ensure the chart container adapts */
+            #medal-tally-chart-container {
+                height: 60vh;
+            }
         }
     </style>
 </head>
@@ -280,14 +315,28 @@
         
         let medalChart; 
 
-        // --- 2. DATA RENDERING FUNCTIONS ---
+        // --- 2. DATA RENDERING FUNCTIONS (Chart Text Color Fixed) ---
 
         function renderMedalTally() {
             const ctx = document.getElementById('medalChart').getContext('2d');
+            
+            // Function to get the current computed font size from CSS
+            const getComputedFontSize = (baseVW) => {
+                const vw = window.innerWidth / 100;
+                return `${baseVW * vw}px`;
+            };
+            
+            // Dynamic Font Sizing for Chart.js
+            const chartFontSizeBase = getComputedFontSize(1.2); // 1.2vw
+            const chartFontSizeHeading = getComputedFontSize(1.6); // 1.6vw
+
             const labels = medalData.map(c => `${getFlagEmoji(c.code)} ${c.country} (${c.T})`);
             const goldData = medalData.map(c => c.G);
             const silverData = medalData.map(c => c.S);
             const bronzeData = medalData.map(c => c.B);
+            
+            // Get CSS variable for text color
+            const textColor = document.documentElement.style.getPropertyValue('--color-text-light') || '#F0F8FF';
 
             if (medalChart) {
                 medalChart.destroy();
@@ -329,26 +378,29 @@
                         x: {
                             stacked: true,
                             grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: 'var(--color-text-light)', font: { size: 14, family: 'var(--font-primary)' } }, /* Chart text uses primary font */
-                            title: { display: true, text: 'Total Medals', color: 'var(--color-text-light)', font: { size: 16, family: 'var(--font-heading)' } } /* Title uses heading font */
+                            // Set color to white text variable
+                            ticks: { color: textColor, font: { size: chartFontSizeBase, family: 'var(--font-primary)' } },
+                            title: { display: true, text: 'Total Medals', color: textColor, font: { size: chartFontSizeHeading, family: 'var(--font-heading)' } }
                         },
                         y: {
                             stacked: true,
                             grid: { display: false },
-                            ticks: { color: 'var(--color-text-light)', font: { size: 14, family: 'var(--font-primary)' } }
+                            // Set color to white text variable
+                            ticks: { color: textColor, font: { size: chartFontSizeBase, family: 'var(--font-primary)' } }
                         }
                     },
                     plugins: {
                         legend: {
                             labels: {
-                                color: 'var(--color-text-light)',
-                                font: { size: 16, family: 'var(--font-heading)' }, /* Legend uses heading font */
+                                // Set color to white text variable
+                                color: textColor,
+                                font: { size: chartFontSizeHeading, family: 'var(--font-heading)' },
                                 usePointStyle: true
                             }
                         },
                         tooltip: {
-                            bodyFont: { size: 14, family: 'var(--font-primary)' },
-                            titleFont: { size: 16, family: 'var(--font-heading)' }
+                            bodyFont: { size: chartFontSizeBase, family: 'var(--font-primary)' },
+                            titleFont: { size: chartFontSizeHeading, family: 'var(--font-heading)' }
                         }
                     }
                 }
@@ -384,7 +436,7 @@
             }
         }
 
-        // --- 3. ROTATION LOGIC & BACKGROUND SWAP ---
+        // --- 3. ROTATION LOGIC & BACKGROUND SWAP (Unchanged) ---
 
         const panels = document.querySelectorAll('.panel');
         const nextButton = document.getElementById('next-button');
@@ -477,6 +529,9 @@
             updateCountdown();
             startRotation();
             setInterval(updateCountdown, 1000); 
+            
+            // Re-render chart on window resize to ensure dynamic fonts/colors update
+            window.addEventListener('resize', renderMedalTally); 
         }
 
         document.addEventListener('DOMContentLoaded', initDashboard);
