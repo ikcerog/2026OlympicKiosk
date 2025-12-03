@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Milano Cortina 2026 Kiosk Dashboard (Final)</title>
+    <title>Milano Cortina 2026 Kiosk Dashboard (TASA Explorer Font)</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=TASA+Explorer:wght@400..800&display=swap');
     </style>
 
     <style>
         :root {
-            --font-primary: 'Montserrat', sans-serif;
-            --font-secondary: 'Inter', sans-serif;
+            --font-primary: 'Inter', sans-serif; /* For body/general text */
+            --font-heading: 'TASA Explorer', sans-serif; /* For titles and key numbers */
             --color-gold: #FFD700;
             --color-silver: #C0C0C0;
             --color-bronze: #CD7F32;
-            --color-background: #002244; /* Deep Blue base */
-            --color-text-light: #F0F8FF; /* Alice Blue */
-            --color-accent: #E30613; /* Host country Italy Red */
+            --color-background: #002244;
+            --color-text-light: #F0F8FF;
+            --color-accent: #E30613;
             --control-height: 80px;
         }
         
@@ -39,7 +39,7 @@
             position: relative;
         }
         
-        /* --- DYNAMIC BACKGROUND LAYERS (Using Local Images) --- */
+        /* --- DYNAMIC BACKGROUND LAYERS --- */
         .background-layer {
             position: absolute;
             top: 0;
@@ -49,18 +49,16 @@
             background-size: cover;
             background-position: center;
             opacity: 0;
-            transition: opacity 1s ease-in-out; /* Faster crossfade with panel rotation */
+            transition: opacity 1s ease-in-out; 
             filter: blur(5px) brightness(0.7);
             z-index: -1;
         }
         
         #bg-1 {
-            /* Using your first local image */
             background-image: url('./img/001.jpg'); 
             opacity: 1; 
         }
         #bg-2 {
-            /* Using your second local image */
             background-image: url('./img/002.jpg');
         }
 
@@ -110,18 +108,18 @@
         }
         
         h1 { 
-            font-family: var(--font-secondary);
+            font-family: var(--font-heading); /* Applied TASA Explorer */
             font-size: 3.2em; 
             margin-bottom: 5px; 
-            font-weight: 900;
+            font-weight: 800; /* Set a bold weight */
         }
         h2 { 
-            font-family: var(--font-secondary);
+            font-family: var(--font-heading); /* Applied TASA Explorer */
             font-size: 1.8em; 
             border-bottom: 3px solid var(--color-accent); 
             padding-bottom: 5px; 
             margin-bottom: 20px;
-            font-weight: 700;
+            font-weight: 600; /* Slightly lighter weight */
         }
 
         /* Panel 1: Schedule */
@@ -132,7 +130,7 @@
             max-height: 80%;
             overflow-y: auto;
             text-align: left;
-            font-family: var(--font-secondary);
+            font-family: var(--font-primary);
         }
         .event-list li {
             background: rgba(255, 255, 255, 0.15);
@@ -144,7 +142,11 @@
             align-items: center;
             font-size: 1.2em;
         }
-        .event-list .time { color: var(--color-gold); font-weight: 700; }
+        .event-list .time { 
+            color: var(--color-gold); 
+            font-weight: 700; 
+            font-family: var(--font-heading); /* Use TASA Explorer for time numbers */
+        }
 
         /* Panel 2: Medal Tally - Chart Container */
         #medal-tally-chart-container {
@@ -156,7 +158,8 @@
         /* Panel 3: Spotlight */
         #spotlight .countdown {
             font-size: 7em;
-            font-weight: 900;
+            font-weight: 800;
+            font-family: var(--font-heading); /* Applied TASA Explorer */
             color: var(--color-gold);
             margin-top: 20px;
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -185,8 +188,8 @@
             cursor: pointer;
             border-radius: 5px;
             transition: background-color 0.3s;
-            font-weight: bold;
-            font-family: var(--font-secondary);
+            font-weight: 600;
+            font-family: var(--font-heading); /* Applied TASA Explorer to buttons */
         }
         .control-button:hover {
             background-color: #A9040F;
@@ -326,26 +329,26 @@
                         x: {
                             stacked: true,
                             grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: 'var(--color-text-light)', font: { size: 14, family: 'var(--font-secondary)' } },
-                            title: { display: true, text: 'Total Medals', color: 'var(--color-text-light)', font: { size: 16, family: 'var(--font-secondary)' } }
+                            ticks: { color: 'var(--color-text-light)', font: { size: 14, family: 'var(--font-primary)' } }, /* Chart text uses primary font */
+                            title: { display: true, text: 'Total Medals', color: 'var(--color-text-light)', font: { size: 16, family: 'var(--font-heading)' } } /* Title uses heading font */
                         },
                         y: {
                             stacked: true,
                             grid: { display: false },
-                            ticks: { color: 'var(--color-text-light)', font: { size: 14, family: 'var(--font-secondary)' } }
+                            ticks: { color: 'var(--color-text-light)', font: { size: 14, family: 'var(--font-primary)' } }
                         }
                     },
                     plugins: {
                         legend: {
                             labels: {
                                 color: 'var(--color-text-light)',
-                                font: { size: 16, family: 'var(--font-secondary)' },
+                                font: { size: 16, family: 'var(--font-heading)' }, /* Legend uses heading font */
                                 usePointStyle: true
                             }
                         },
                         tooltip: {
-                            bodyFont: { size: 14, family: 'var(--font-secondary)' },
-                            titleFont: { size: 16, family: 'var(--font-secondary)' }
+                            bodyFont: { size: 14, family: 'var(--font-primary)' },
+                            titleFont: { size: 16, family: 'var(--font-heading)' }
                         }
                     }
                 }
@@ -409,7 +412,6 @@
             }
         }
         
-        // Function to handle the background image swap tied to panel rotation
         function changeBackgroundOnPanelCycle() {
             if (activeBackground === 1) {
                 bg1.style.opacity = 0;
@@ -429,7 +431,6 @@
             
             panels[currentPanelIndex].classList.add('active');
 
-            // Trigger background change on every panel rotation
             changeBackgroundOnPanelCycle();
 
             if (!isPaused) {
@@ -475,7 +476,6 @@
             renderMedalTally(); 
             updateCountdown();
             startRotation();
-            // Only update the countdown every second
             setInterval(updateCountdown, 1000); 
         }
 
