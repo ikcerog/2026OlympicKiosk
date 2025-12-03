@@ -512,13 +512,14 @@
                             }
                         },
                         tooltip: {
-                            // --- Tooltip Styling Fix ---
+                            // --- Tooltip Styling Fix: Added top-level color and explicit background/border/text colors ---
+                            color: textColor,
                             backgroundColor: 'rgba(0, 34, 68, 0.95)',
                             borderColor: 'var(--color-gold)',
                             borderWidth: 1,
                             bodyColor: textColor,
                             titleColor: textColor,
-                            // ---------------------------
+                            // ------------------------------------------------------------------------------------------
                             bodyFont: { size: chartFontSizeBase, family: 'var(--font-primary)' },
                             titleFont: { size: chartFontSizeHeading, family: 'var(--font-heading)' }
                         }
@@ -664,7 +665,6 @@
             eventSelector.style.display = 'none';
             
             setInterval(updateCountdown, 1000); 
-            // Re-render chart on resize to update dynamic font sizes and tooltips
             window.addEventListener('resize', () => loadHistoricalData(eventSelector.value)); 
         }
 
