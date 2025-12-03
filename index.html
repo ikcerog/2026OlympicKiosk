@@ -50,7 +50,7 @@
             position: relative;
         }
         
-        /* --- DYNAMIC BACKGROUND LAYERS (Unchanged) --- */
+        /* --- DYNAMIC BACKGROUND LAYERS --- */
         .background-layer {
             position: absolute;
             top: 0;
@@ -93,9 +93,9 @@
             padding: 8px 15px;
             border-radius: 5px;
             font-family: var(--font-heading);
-            font-size: clamp(14px, 1.2vw, var(--max-font-size-dropdown)); /* Clamp size */
+            font-size: clamp(14px, 1.2vw, var(--max-font-size-dropdown));
             cursor: pointer;
-            appearance: none; /* Remove default arrow */
+            appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%23F0F8FF' d='M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 10px center;
@@ -107,7 +107,7 @@
         }
 
 
-        /* --- DASHBOARD ELEMENTS (Unchanged) --- */
+        /* --- DASHBOARD ELEMENTS --- */
         #dashboard-container {
             width: 100%;
             height: calc(100% - var(--control-height)); 
@@ -285,7 +285,7 @@
                 font-size: 3vw;
                 flex-grow: 1;
                 min-width: 40%;
-                max-width: 100%; /* Override max-width for small screens */
+                max-width: 100%;
             }
             
             #medal-tally-chart-container {
@@ -345,7 +345,6 @@
     <script>
         // --- 1. MOCK DATA ---
         
-        // Data for the current (2026) display
         const MOCK_DATA_2026 = [
             { rank: 1, country: "Norway", code: "NOR", G: 16, S: 8, B: 13, T: 37 },
             { rank: 2, country: "Germany", code: "GER", G: 12, S: 10, B: 5, T: 27 },
@@ -359,7 +358,6 @@
             { rank: 10, country: "China", code: "CHN", G: 9, S: 4, B: 2, T: 15 },
         ].sort((a, b) => b.T - a.T); 
         
-        // Mock data for Beijing 2022 (Actual top 10)
         const MOCK_DATA_2022 = [
             { rank: 1, country: "Norway", code: "NOR", G: 16, S: 8, B: 13, T: 37 },
             { rank: 2, country: "Germany", code: "GER", G: 12, S: 10, B: 5, T: 27 },
@@ -373,7 +371,6 @@
             { rank: 10, country: "France", code: "FRA", G: 5, S: 7, B: 2, T: 14 },
         ].sort((a, b) => b.T - a.T);
 
-        // Mock data for Tokyo 2020 (Summer)
         const MOCK_DATA_2020 = [
             { rank: 1, country: "USA", code: "USA", G: 39, S: 41, B: 33, T: 113 },
             { rank: 2, country: "China", code: "CHN", G: 38, S: 32, B: 19, T: 89 },
@@ -411,7 +408,6 @@
 
         // --- 2. DATA RENDERING FUNCTIONS ---
         
-        // Function to load and render the medal chart based on selection
         function loadHistoricalData(eventKey) {
             let data;
             let title;
@@ -440,20 +436,17 @@
             renderMedalTally(data);
         }
 
-        // Modified renderMedalTally to accept data array
         function renderMedalTally(currentData = MOCK_DATA_2026) {
             const ctx = document.getElementById('medalChart').getContext('2d');
             
             const getComputedFontSize = (baseVW) => {
                 const vw = window.innerWidth / 100;
-                // Clamp font size to prevent excess scaling on ultrawide
                 return Math.min(baseVW * vw, 24) + 'px'; 
             };
             
             const chartFontSizeBase = getComputedFontSize(1.2); 
             const chartFontSizeHeading = getComputedFontSize(1.6); 
 
-            // Use the passed-in data
             const labels = currentData.map(c => `${getFlagEmoji(c.code)} ${c.country} (${c.T})`);
             const goldData = currentData.map(c => c.G);
             const silverData = currentData.map(c => c.S);
@@ -519,6 +512,13 @@
                             }
                         },
                         tooltip: {
+                            // --- Tooltip Styling Fix ---
+                            backgroundColor: 'rgba(0, 34, 68, 0.95)',
+                            borderColor: 'var(--color-gold)',
+                            borderWidth: 1,
+                            bodyColor: textColor,
+                            titleColor: textColor,
+                            // ---------------------------
                             bodyFont: { size: chartFontSizeBase, family: 'var(--font-primary)' },
                             titleFont: { size: chartFontSizeHeading, family: 'var(--font-heading)' }
                         }
@@ -556,7 +556,7 @@
             }
         }
 
-        // --- 3. ROTATION LOGIC & BACKGROUND SWAP (Unchanged) ---
+        // --- 3. ROTATION LOGIC & BACKGROUND SWAP ---
 
         const panels = document.querySelectorAll('.panel');
         const nextButton = document.getElementById('next-button');
@@ -648,7 +648,6 @@
             }
         });
         
-        // Event listener for the dropdown change
         eventSelector.addEventListener('change', (e) => {
             loadHistoricalData(e.target.value);
         });
@@ -658,14 +657,14 @@
 
         function initDashboard() {
             renderSchedule();
-            loadHistoricalData('2026-current'); // Initial load of current data
+            loadHistoricalData('2026-current');
             updateCountdown();
             startRotation();
             
-            // Initial state: hide dropdown
             eventSelector.style.display = 'none';
             
             setInterval(updateCountdown, 1000); 
+            // Re-render chart on resize to update dynamic font sizes and tooltips
             window.addEventListener('resize', () => loadHistoricalData(eventSelector.value)); 
         }
 
