@@ -106,6 +106,22 @@
             border-color: var(--color-accent);
         }
 
+        /* --- CUSTOM TOOLTIP CSS --- */
+        #chartjs-tooltip {
+            opacity: 0;
+            pointer-events: none; 
+            position: absolute;
+            background: rgba(0, 34, 68, 0.95); 
+            color: #F0F8FF;
+            border-radius: 4px;
+            padding: 10px;
+            border: 1px solid var(--color-gold);
+            transition: opacity 0.1s ease;
+            z-index: 100; 
+            font-family: var(--font-primary);
+            font-size: 1.1vw;
+            min-width: 150px;
+        }
 
         /* --- DASHBOARD ELEMENTS --- */
         #dashboard-container {
@@ -194,9 +210,30 @@
             width: 95%;
             height: 70vh;
             margin-top: 10px;
-            /* FIX: Ensure tooltips render above the canvas */
-            position: relative; 
-            z-index: 1;
+            /* Removed z-index and position fixes as they are now handled by custom tooltip */
+        }
+        
+        #view-toggles {
+            margin-bottom: 10px;
+        }
+        .view-toggle-button {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: var(--color-text-light);
+            border: 1px solid var(--color-gold);
+            padding: 8px 15px;
+            margin: 0 5px;
+            border-radius: 5px;
+            font-family: var(--font-heading);
+            font-size: clamp(12px, 1.1vw, 18px);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .view-toggle-button:hover:not(.active) {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .view-toggle-button.active {
+            background-color: var(--color-accent);
+            border-color: var(--color-accent);
         }
 
         /* Panel 3: Spotlight */
@@ -303,6 +340,8 @@
     <div id="bg-2" class="background-layer"></div>
     <div id="gradient-overlay"></div>
     
+    <div id="chartjs-tooltip"></div>
+    
     <div id="historical-data">
         <select id="event-selector">
             <option value="2026-current">Milano Cortina 2026 (Current)</option>
@@ -323,6 +362,12 @@
         <div id="medal-tally" class="panel">
             <h1>🏅 MEDAL STANDINGS</h1>
             <h2 id="medal-tally-subtitle">Top 10 Nations (Stacked Bar Chart)</h2>
+            
+            <div id="view-toggles">
+                <button id="view-stacked" class="view-toggle-button active" data-type="stacked">Stacked View</button>
+                <button id="view-separate" class="view-toggle-button" data-type="separate">Separate View</button>
+            </div>
+            
             <div id="medal-tally-chart-container">
                 <canvas id="medalChart"></canvas>
             </div>
@@ -408,10 +453,81 @@
         }
         
         let medalChart; 
+        let currentChartType = 'stacked';
+        let currentChartDataKey = '2026-current';
+        
+        // --- CUSTOM TOOLTIP FUNCTION ---
+        function customTooltip(context) {
+            // Tooltip Element Reference
+            let tooltipEl = document.getElementById('chartjs-tooltip');
+            const chart = context.chart;
+            const container = chart.canvas.parentNode; // The medal-tally-chart-container
+
+            if (!tooltipEl) {
+                tooltipEl = document.createElement('div');
+                tooltipEl.id = 'chartjs-tooltip';
+                container.appendChild(tooltipEl);
+            }
+
+            const tooltipModel = context.tooltip;
+
+            // Hide if no tooltip
+            if (tooltipModel.opacity === 0) {
+                tooltipEl.style.opacity = 0;
+                return;
+            }
+
+            // Set text content
+            if (tooltipModel.body) {
+                const titleLines = tooltipModel.title || [];
+                const bodyLines = tooltipModel.body.map(b => b.lines);
+
+                let innerHtml = '<div>';
+                
+                titleLines.forEach(function(title) {
+                    // Extract country code from label for flag
+                    const codeMatch = title.match(/\(([A-Z]+)\)/);
+                    const code = codeMatch ? codeMatch[1] : '';
+                    const flag = getFlagEmoji(code);
+                    
+                    innerHtml += '<div style="font-weight: 700; font-size: 1.2em; border-bottom: 1px solid var(--color-gold); padding-bottom: 5px; margin-bottom: 5px;">' + flag + ' ' + title + '</div>';
+                });
+
+                bodyLines.forEach(function(body, i) {
+                    innerHtml += '<div style="margin: 3px 0; display: flex; justify-content: space-between;">';
+                    // Use list item color as a square marker
+                    innerHtml += '<span style="display: inline-block; width: 10px; height: 10px; margin-right: 5px; background-color:' + tooltipModel.labelColors[i].backgroundColor + ';"></span>';
+                    innerHtml += body[0];
+                    innerHtml += '</div>';
+                });
+
+                innerHtml += '</div>';
+                tooltipEl.innerHTML = innerHtml;
+            }
+
+            // Calculate position
+            const {offsetLeft: chartX, offsetTop: chartY} = chart.canvas;
+            
+            // Adjust X position to place tooltip to the right of the pointer
+            let x = chartX + tooltipModel.caretX + 15;
+            let y = chartY + tooltipModel.caretY - tooltipEl.clientHeight / 2;
+
+            // Boundary check: move left if too close to the right edge
+            if (x + tooltipEl.clientWidth > chartX + chart.width) {
+                x = chartX + tooltipModel.caretX - tooltipEl.clientWidth - 15;
+            }
+            
+            // Set position and show
+            tooltipEl.style.left = x + 'px';
+            tooltipEl.style.top = y + 'px';
+            tooltipEl.style.opacity = 1;
+        }
+
 
         // --- 2. DATA RENDERING FUNCTIONS ---
         
-        function loadHistoricalData(eventKey) {
+        function loadHistoricalData(eventKey, chartType = currentChartType) {
+            currentChartDataKey = eventKey;
             let data;
             let title;
 
@@ -431,15 +547,16 @@
                 case '2026-current':
                 default:
                     data = MOCK_DATA_2026;
-                    title = "Top 10 Nations (Stacked Bar Chart)";
+                    title = "Top 10 Nations";
                     break;
             }
             
-            document.getElementById('medal-tally-subtitle').textContent = title;
-            renderMedalTally(data);
+            document.getElementById('medal-tally-subtitle').textContent = `${title} (${chartType === 'stacked' ? 'Stacked Bar' : 'Grouped Bars'})`;
+            renderMedalTally(data, chartType);
         }
 
-        function renderMedalTally(currentData = MOCK_DATA_2026) {
+        function renderMedalTally(currentData = MOCK_DATA_2026, chartType = currentChartType) {
+            currentChartType = chartType;
             const ctx = document.getElementById('medalChart').getContext('2d');
             
             const getComputedFontSize = (baseVW) => {
@@ -457,11 +574,12 @@
             
             const textColor = document.documentElement.style.getPropertyValue('--color-text-light') || '#F0F8FF';
 
-            // --- CRITICAL FIX: Ensure complete destruction before creation ---
+            // Ensure complete destruction before creation
             if (medalChart instanceof Chart) {
                 medalChart.destroy();
             }
-            // -----------------------------------------------------------------
+
+            const isStacked = chartType === 'stacked';
 
             medalChart = new Chart(ctx, {
                 type: 'bar',
@@ -497,13 +615,13 @@
                     maintainAspectRatio: false,
                     scales: {
                         x: {
-                            stacked: true,
+                            stacked: isStacked, // Dynamic stacking
                             grid: { color: 'rgba(255, 255, 255, 0.1)' },
                             ticks: { color: textColor, font: { size: chartFontSizeBase, family: 'var(--font-primary)' } },
-                            title: { display: true, text: 'Total Medals', color: textColor, font: { size: chartFontSizeHeading, family: 'var(--font-heading)' } }
+                            title: { display: true, text: 'Medals Count', color: textColor, font: { size: chartFontSizeHeading, family: 'var(--font-heading)' } }
                         },
                         y: {
-                            stacked: true,
+                            stacked: isStacked, // Dynamic stacking
                             grid: { display: false },
                             ticks: { color: textColor, font: { size: chartFontSizeBase, family: 'var(--font-primary)' } }
                         }
@@ -517,17 +635,18 @@
                             }
                         },
                         tooltip: {
-                            // --- Explicit activation and styling for visibility ---
-                            enabled: true, 
-                            color: textColor,
-                            backgroundColor: 'rgba(0, 34, 68, 0.95)',
-                            borderColor: 'var(--color-gold)',
-                            borderWidth: 1,
-                            bodyColor: textColor,
-                            titleColor: textColor,
-                            // -----------------------------------------------------
-                            bodyFont: { size: chartFontSizeBase, family: 'var(--font-primary)' },
-                            titleFont: { size: chartFontSizeHeading, family: 'var(--font-heading)' }
+                            // --- CRITICAL FIX: Disable built-in tooltip and use custom function ---
+                            enabled: false,
+                            external: customTooltip,
+                            mode: 'index',
+                            intersect: false 
+                            // ---------------------------------------------------------------------
+                        }
+                    },
+                    // Hide custom tooltip when not hovering over the chart area
+                    onHover: (e, activeElements, chart) => {
+                        if (activeElements.length === 0) {
+                            document.getElementById('chartjs-tooltip').style.opacity = 0;
                         }
                     }
                 }
@@ -582,6 +701,9 @@
         let currentRotationSpeed = SPEED_SLOW;
         let isPaused = false;
         let activeBackground = 1;
+        
+        const toggleButtons = document.querySelectorAll('.view-toggle-button');
+
 
         function startRotation() {
             if (rotationIntervalId) {
@@ -614,8 +736,11 @@
             // Hide/Show dropdown based on panel
             if (panels[currentPanelIndex].id === 'medal-tally') {
                 eventSelector.style.display = 'block';
+                document.getElementById('view-toggles').style.display = 'block';
             } else {
                 eventSelector.style.display = 'none';
+                document.getElementById('view-toggles').style.display = 'none';
+                document.getElementById('chartjs-tooltip').style.opacity = 0; // Hide tooltip on panel switch
             }
 
             changeBackgroundOnPanelCycle();
@@ -656,7 +781,22 @@
         });
         
         eventSelector.addEventListener('change', (e) => {
-            loadHistoricalData(e.target.value);
+            loadHistoricalData(e.target.value, currentChartType);
+        });
+        
+        // View Toggle Logic
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const newType = this.getAttribute('data-type');
+                if (newType !== currentChartType) {
+                    // Update button classes
+                    toggleButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Re-render chart with new view type
+                    loadHistoricalData(currentChartDataKey, newType);
+                }
+            });
         });
 
 
@@ -664,14 +804,16 @@
 
         function initDashboard() {
             renderSchedule();
-            loadHistoricalData('2026-current');
+            loadHistoricalData('2026-current', currentChartType);
             updateCountdown();
             startRotation();
             
             eventSelector.style.display = 'none';
+            document.getElementById('view-toggles').style.display = 'none';
             
             setInterval(updateCountdown, 1000); 
-            window.addEventListener('resize', () => loadHistoricalData(eventSelector.value)); 
+            // Re-render chart on resize to maintain responsiveness and reset fonts
+            window.addEventListener('resize', () => loadHistoricalData(currentChartDataKey, currentChartType)); 
         }
 
         document.addEventListener('DOMContentLoaded', initDashboard);
