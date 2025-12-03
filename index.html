@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Milano Cortina 2026 Kiosk Dashboard (Responsive)</title>
+    <title>Milano Cortina 2026 Kiosk Dashboard (Final)</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     
@@ -28,6 +28,11 @@
             --font-size-h2: 2.0vw;
             --font-size-base: 1.5vw;
             --font-size-lg: 1.8vw;
+
+            /* Max size constraints for ultra-wide screens */
+            --max-font-size-button: 20px;
+            --max-width-button: 200px;
+            --max-font-size-dropdown: 18px;
         }
         
         body {
@@ -45,7 +50,7 @@
             position: relative;
         }
         
-        /* --- DYNAMIC BACKGROUND LAYERS --- */
+        /* --- DYNAMIC BACKGROUND LAYERS (Unchanged) --- */
         .background-layer {
             position: absolute;
             top: 0;
@@ -74,7 +79,35 @@
             z-index: -1;
         }
 
-        /* --- DASHBOARD ELEMENTS --- */
+        /* --- HISTORICAL DATA DROPDOWN --- */
+        #historical-data {
+            position: absolute;
+            top: 20px;
+            right: 50px;
+            z-index: 50;
+        }
+        #historical-data select {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: var(--color-text-light);
+            border: 1px solid var(--color-gold);
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-family: var(--font-heading);
+            font-size: clamp(14px, 1.2vw, var(--max-font-size-dropdown)); /* Clamp size */
+            cursor: pointer;
+            appearance: none; /* Remove default arrow */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%23F0F8FF' d='M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 1.5em;
+        }
+        #historical-data select:focus {
+            outline: none;
+            border-color: var(--color-accent);
+        }
+
+
+        /* --- DASHBOARD ELEMENTS (Unchanged) --- */
         #dashboard-container {
             width: 100%;
             height: calc(100% - var(--control-height)); 
@@ -110,13 +143,13 @@
         
         h1 { 
             font-family: var(--font-heading); 
-            font-size: var(--font-size-h1); /* Dynamic sizing */
+            font-size: var(--font-size-h1);
             margin-bottom: 5px; 
             font-weight: 800;
         }
         h2 { 
             font-family: var(--font-heading); 
-            font-size: var(--font-size-h2); /* Dynamic sizing */
+            font-size: var(--font-size-h2);
             border-bottom: 3px solid var(--color-accent); 
             padding-bottom: 5px; 
             margin-bottom: 20px;
@@ -147,7 +180,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: var(--font-size-base); /* Dynamic sizing */
+            font-size: var(--font-size-base);
         }
         .event-list .time { 
             color: var(--color-gold); 
@@ -165,7 +198,7 @@
 
         /* Panel 3: Spotlight */
         #spotlight .countdown {
-            font-size: 8vw; /* Very large and dynamic */
+            font-size: 8vw;
             font-weight: 800;
             font-family: var(--font-heading); 
             color: var(--color-gold);
@@ -192,12 +225,29 @@
             border: none;
             padding: 15px 30px;
             margin: 0 10px;
-            font-size: 1.2vw; /* Dynamic sizing for buttons */
+            
+            /* Apply max size constraints */
+            font-size: clamp(14px, 1.2vw, var(--max-font-size-button));
+            max-width: var(--max-width-button);
+            
             cursor: pointer;
             border-radius: 5px;
             transition: background-color 0.3s;
             font-weight: 600;
             font-family: var(--font-heading);
+        }
+        .control-button:hover {
+            background-color: #A9040F;
+        }
+        .control-button:disabled {
+            background-color: #333;
+            cursor: not-allowed;
+        }
+        #speed-toggle {
+            background-color: #555;
+        }
+        #speed-toggle:hover {
+            background-color: #777;
         }
         
         /* --- MOBILE/VERTICAL SCREEN STYLING (Responsive Flow) --- */
@@ -214,12 +264,15 @@
                 padding: 20px;
             }
             
-            /* Adjust countdown size for portrait */
+            #historical-data {
+                top: 10px;
+                right: 10px;
+            }
+            
             #spotlight .countdown {
                 font-size: 15vw;
             }
             
-            /* Stack controls vertically or wrap them */
             #kiosk-controls {
                 flex-wrap: wrap;
                 justify-content space-around;
@@ -230,11 +283,11 @@
                 padding: 10px 15px;
                 margin: 5px;
                 font-size: 3vw;
-                flex-grow: 1; /* Allow buttons to expand */
+                flex-grow: 1;
                 min-width: 40%;
+                max-width: 100%; /* Override max-width for small screens */
             }
             
-            /* Ensure the chart container adapts */
             #medal-tally-chart-container {
                 height: 60vh;
             }
@@ -246,6 +299,15 @@
     <div id="bg-1" class="background-layer"></div>
     <div id="bg-2" class="background-layer"></div>
     <div id="gradient-overlay"></div>
+    
+    <div id="historical-data">
+        <select id="event-selector">
+            <option value="2026-current">Milano Cortina 2026 (Current)</option>
+            <option value="2022-winter">Beijing 2022 (Winter)</option>
+            <option value="2020-summer">Tokyo 2020 (Summer)</option>
+            <option value="2018-winter">PyeongChang 2018 (Winter)</option>
+        </select>
+    </div>
 
     <div id="dashboard-container">
 
@@ -257,7 +319,7 @@
 
         <div id="medal-tally" class="panel">
             <h1>🏅 MEDAL STANDINGS</h1>
-            <h2>Top 10 Nations (Stacked Bar Chart)</h2>
+            <h2 id="medal-tally-subtitle">Top 10 Nations (Stacked Bar Chart)</h2>
             <div id="medal-tally-chart-container">
                 <canvas id="medalChart"></canvas>
             </div>
@@ -281,8 +343,10 @@
     </div>
 
     <script>
-        // --- 1. MOCK DATA (Unchanged) ---
-        const medalData = [
+        // --- 1. MOCK DATA ---
+        
+        // Data for the current (2026) display
+        const MOCK_DATA_2026 = [
             { rank: 1, country: "Norway", code: "NOR", G: 16, S: 8, B: 13, T: 37 },
             { rank: 2, country: "Germany", code: "GER", G: 12, S: 10, B: 5, T: 27 },
             { rank: 3, country: "Canada", code: "CAN", G: 4, S: 8, B: 14, T: 26 },
@@ -294,7 +358,35 @@
             { rank: 9, country: "Netherlands", code: "NED", G: 8, S: 5, B: 4, T: 17 },
             { rank: 10, country: "China", code: "CHN", G: 9, S: 4, B: 2, T: 15 },
         ].sort((a, b) => b.T - a.T); 
+        
+        // Mock data for Beijing 2022 (Actual top 10)
+        const MOCK_DATA_2022 = [
+            { rank: 1, country: "Norway", code: "NOR", G: 16, S: 8, B: 13, T: 37 },
+            { rank: 2, country: "Germany", code: "GER", G: 12, S: 10, B: 5, T: 27 },
+            { rank: 3, country: "China", code: "CHN", G: 9, S: 4, B: 2, T: 15 },
+            { rank: 4, country: "USA", code: "USA", G: 8, S: 10, B: 7, T: 25 },
+            { rank: 5, country: "Sweden", code: "SWE", G: 8, S: 5, B: 5, T: 18 },
+            { rank: 6, country: "Netherlands", code: "NED", G: 8, S: 5, B: 4, T: 17 },
+            { rank: 7, country: "Austria", code: "AUT", G: 7, S: 7, B: 4, T: 18 },
+            { rank: 8, country: "Switzerland", code: "SUI", G: 7, S: 2, B: 5, T: 14 },
+            { rank: 9, country: "ROC", code: "RUS", G: 6, S: 12, B: 14, T: 32 },
+            { rank: 10, country: "France", code: "FRA", G: 5, S: 7, B: 2, T: 14 },
+        ].sort((a, b) => b.T - a.T);
 
+        // Mock data for Tokyo 2020 (Summer)
+        const MOCK_DATA_2020 = [
+            { rank: 1, country: "USA", code: "USA", G: 39, S: 41, B: 33, T: 113 },
+            { rank: 2, country: "China", code: "CHN", G: 38, S: 32, B: 19, T: 89 },
+            { rank: 3, country: "Japan", code: "JPN", G: 27, S: 14, B: 17, T: 58 },
+            { rank: 4, country: "Great Britain", code: "GBR", G: 22, S: 21, B: 22, T: 65 },
+            { rank: 5, country: "Australia", code: "AUS", G: 17, S: 7, B: 22, T: 46 },
+            { rank: 6, country: "Netherlands", code: "NED", G: 10, S: 12, B: 14, T: 36 },
+            { rank: 7, country: "France", code: "FRA", G: 10, S: 12, B: 11, T: 33 },
+            { rank: 8, country: "Germany", code: "GER", G: 10, S: 11, B: 16, T: 37 },
+            { rank: 9, country: "Italy", code: "ITA", G: 10, S: 10, B: 20, T: 40 },
+            { rank: 10, country: "Canada", code: "CAN", G: 7, S: 7, B: 10, T: 24 },
+        ].sort((a, b) => b.T - a.T);
+        
         const scheduleData = [
             { sport: "Alpine Skiing", event: "Women's Downhill Final", time: "09:30 AM CET" },
             { sport: "Curling", event: "Men's Gold Medal Match", time: "11:00 AM CET" },
@@ -308,34 +400,65 @@
         function getFlagEmoji(code) {
             const flags = {
                 'NOR': '🇳🇴', 'GER': '🇩🇪', 'CAN': '🇨🇦', 'USA': '🇺🇸', 'SWE': '🇸🇪',
-                'AUT': '🇦🇹', 'ITA': '🇮🇹', 'JPN': '🇯🇵', 'NED': '🇳🇱', 'CHN': '🇨🇳'
+                'AUT': '🇦🇹', 'ITA': '🇮🇹', 'JPN': '🇯🇵', 'NED': '🇳🇱', 'CHN': '🇨🇳',
+                'SUI': '🇨🇭', 'RUS': '🇷🇺', 'FRA': '🇫🇷', 'GBR': '🇬🇧', 'AUS': '🇦🇺',
+                'KOR': '🇰🇷'
             };
             return flags[code] || '🚩';
         }
         
         let medalChart; 
 
-        // --- 2. DATA RENDERING FUNCTIONS (Chart Text Color Fixed) ---
+        // --- 2. DATA RENDERING FUNCTIONS ---
+        
+        // Function to load and render the medal chart based on selection
+        function loadHistoricalData(eventKey) {
+            let data;
+            let title;
 
-        function renderMedalTally() {
+            switch (eventKey) {
+                case '2022-winter':
+                    data = MOCK_DATA_2022;
+                    title = "Beijing 2022 Medal Count (Winter)";
+                    break;
+                case '2020-summer':
+                    data = MOCK_DATA_2020;
+                    title = "Tokyo 2020 Medal Count (Summer)";
+                    break;
+                case '2018-winter':
+                    data = MOCK_DATA_2022; // Using 2022 data as placeholder for 2018
+                    title = "PyeongChang 2018 Medal Count (Winter)";
+                    break;
+                case '2026-current':
+                default:
+                    data = MOCK_DATA_2026;
+                    title = "Top 10 Nations (Stacked Bar Chart)";
+                    break;
+            }
+            
+            document.getElementById('medal-tally-subtitle').textContent = title;
+            renderMedalTally(data);
+        }
+
+        // Modified renderMedalTally to accept data array
+        function renderMedalTally(currentData = MOCK_DATA_2026) {
             const ctx = document.getElementById('medalChart').getContext('2d');
             
-            // Function to get the current computed font size from CSS
             const getComputedFontSize = (baseVW) => {
                 const vw = window.innerWidth / 100;
-                return `${baseVW * vw}px`;
+                // Clamp font size to prevent excess scaling on ultrawide
+                return Math.min(baseVW * vw, 24) + 'px'; 
             };
             
-            // Dynamic Font Sizing for Chart.js
-            const chartFontSizeBase = getComputedFontSize(1.2); // 1.2vw
-            const chartFontSizeHeading = getComputedFontSize(1.6); // 1.6vw
+            const chartFontSizeBase = getComputedFontSize(1.2); 
+            const chartFontSizeHeading = getComputedFontSize(1.6); 
 
-            const labels = medalData.map(c => `${getFlagEmoji(c.code)} ${c.country} (${c.T})`);
-            const goldData = medalData.map(c => c.G);
-            const silverData = medalData.map(c => c.S);
-            const bronzeData = medalData.map(c => c.B);
+            // Use the passed-in data
+            const labels = currentData.map(c => `${getFlagEmoji(c.code)} ${c.country} (${c.T})`);
+            const goldData = currentData.map(c => c.G);
+            const silverData = currentData.map(c => c.S);
+            const bronzeData = currentData.map(c => c.B);
             
-            // Get CSS variable for text color
             const textColor = document.documentElement.style.getPropertyValue('--color-text-light') || '#F0F8FF';
 
             if (medalChart) {
@@ -378,21 +501,18 @@
                         x: {
                             stacked: true,
                             grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            // Set color to white text variable
                             ticks: { color: textColor, font: { size: chartFontSizeBase, family: 'var(--font-primary)' } },
                             title: { display: true, text: 'Total Medals', color: textColor, font: { size: chartFontSizeHeading, family: 'var(--font-heading)' } }
                         },
                         y: {
                             stacked: true,
                             grid: { display: false },
-                            // Set color to white text variable
                             ticks: { color: textColor, font: { size: chartFontSizeBase, family: 'var(--font-primary)' } }
                         }
                     },
                     plugins: {
                         legend: {
                             labels: {
-                                // Set color to white text variable
                                 color: textColor,
                                 font: { size: chartFontSizeHeading, family: 'var(--font-heading)' },
                                 usePointStyle: true
@@ -445,6 +565,7 @@
         const speedToggle = document.getElementById('speed-toggle');
         const bg1 = document.getElementById('bg-1');
         const bg2 = document.getElementById('bg-2');
+        const eventSelector = document.getElementById('event-selector');
 
         let currentPanelIndex = 0;
         let rotationIntervalId;
@@ -483,6 +604,13 @@
             
             panels[currentPanelIndex].classList.add('active');
 
+            // Hide/Show dropdown based on panel
+            if (panels[currentPanelIndex].id === 'medal-tally') {
+                eventSelector.style.display = 'block';
+            } else {
+                eventSelector.style.display = 'none';
+            }
+
             changeBackgroundOnPanelCycle();
 
             if (!isPaused) {
@@ -519,19 +647,26 @@
                 startRotation(); 
             }
         });
+        
+        // Event listener for the dropdown change
+        eventSelector.addEventListener('change', (e) => {
+            loadHistoricalData(e.target.value);
+        });
 
 
         // --- 4. INITIALIZATION ---
 
         function initDashboard() {
             renderSchedule();
-            renderMedalTally(); 
+            loadHistoricalData('2026-current'); // Initial load of current data
             updateCountdown();
             startRotation();
-            setInterval(updateCountdown, 1000); 
             
-            // Re-render chart on window resize to ensure dynamic fonts/colors update
-            window.addEventListener('resize', renderMedalTally); 
+            // Initial state: hide dropdown
+            eventSelector.style.display = 'none';
+            
+            setInterval(updateCountdown, 1000); 
+            window.addEventListener('resize', () => loadHistoricalData(eventSelector.value)); 
         }
 
         document.addEventListener('DOMContentLoaded', initDashboard);
