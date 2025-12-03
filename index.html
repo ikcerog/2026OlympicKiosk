@@ -344,7 +344,6 @@
         <button id="next-button" class="control-button">FORWARD ➡️</button>
         <button id="speed-toggle" class="control-button">🐢 SLOW SWAP (15s)</button>
     </div>
-    <p style="font-size: 5px">Updated December 3, 2025</p>
 
     <script>
         // --- 1. MOCK DATA ---
@@ -516,14 +515,16 @@
                             }
                         },
                         tooltip: {
-                            // --- Tooltip Styling Fix ---
-                            color: textColor, // Ensures text color is white
+                            // --- CRITICAL FIX: Explicitly enabling the plugin ---
+                            enabled: true, 
+                            // --- Styling for Visibility ---
+                            color: textColor,
                             backgroundColor: 'rgba(0, 34, 68, 0.95)',
                             borderColor: 'var(--color-gold)',
                             borderWidth: 1,
                             bodyColor: textColor,
                             titleColor: textColor,
-                            // ---------------------------
+                            // -----------------------------
                             bodyFont: { size: chartFontSizeBase, family: 'var(--font-primary)' },
                             titleFont: { size: chartFontSizeHeading, family: 'var(--font-heading)' }
                         }
