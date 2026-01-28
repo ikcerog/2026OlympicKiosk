@@ -134,6 +134,25 @@
             font-family: var(--font-primary);
         }
 
+        /* --- LIVE DATA DISCLAIMER --- */
+        #live-data-notice {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 34, 68, 0.9);
+            border: 1px solid var(--color-gold);
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: clamp(9px, 0.8vw, 12px);
+            color: var(--color-text-light);
+            opacity: 0.7;
+            z-index: 100;
+            font-family: var(--font-primary);
+            max-width: 90%;
+            text-align: center;
+        }
+
         /* --- CUSTOM TOOLTIP CSS --- */
         #chartjs-tooltip {
             opacity: 0;
@@ -421,6 +440,10 @@
         <button id="speed-toggle" class="control-button">🐢 SLOW SWAP (15s)</button>
     </div>
 
+    <div id="live-data-notice">
+        ℹ️ Near-Live Display: Medal counts update every 5 minutes from Wikipedia. Data may lag official results by 5-15 minutes.
+    </div>
+
     <script>
         // --- 1. DATA SOURCES & CACHING ---
 
@@ -481,13 +504,13 @@
         ].sort((a, b) => b.T - a.T);
         
         const scheduleData = [
-            { sport: "Alpine Skiing", event: "Women's Downhill Final", time: "3:30 AM ET", date: "Feb 15" },
-            { sport: "Curling", event: "Men's Gold Medal Match", time: "5:00 AM ET", date: "Feb 15" },
-            { sport: "Biathlon", event: "Mixed 4x6km Relay", time: "7:30 AM ET", date: "Feb 15" },
-            { sport: "Figure Skating", event: "Ice Dance Free Skate", time: "9:00 AM ET", date: "Feb 15" },
-            { sport: "Speed Skating", event: "Men's 500m Final", time: "10:30 AM ET", date: "Feb 15" },
-            { sport: "Bobsleigh", event: "Women's Monobob Run 3", time: "12:00 PM ET", date: "Feb 15" },
-            { sport: "Ice Hockey", event: "Men's Group A: SWE vs FIN", time: "2:00 PM ET", date: "Feb 15" }
+            { sport: "Alpine Skiing", event: "Men's Downhill - GOLD MEDAL", time: "5:30 AM ET", date: "Feb 7" },
+            { sport: "Snowboard", event: "Women's Slopestyle Final - GOLD MEDAL", time: "6:00 AM ET", date: "Feb 7" },
+            { sport: "Cross-Country", event: "Women's 10km+10km Skiathlon - GOLD MEDAL", time: "7:00 AM ET", date: "Feb 7" },
+            { sport: "Ski Jumping", event: "Men's Normal Hill Individual - GOLD MEDAL", time: "8:30 AM ET", date: "Feb 7" },
+            { sport: "Speed Skating", event: "Women's 3000m Final - GOLD MEDAL", time: "9:00 AM ET", date: "Feb 7" },
+            { sport: "Freestyle Skiing", event: "Women's Moguls Final - GOLD MEDAL", time: "11:00 AM ET", date: "Feb 7" },
+            { sport: "Figure Skating", event: "Team Event - Short Programs", time: "2:00 PM ET", date: "Feb 7" }
         ];
 
         // --- API FETCHING FUNCTIONS ---
