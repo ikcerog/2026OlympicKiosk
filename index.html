@@ -79,12 +79,15 @@
             z-index: -1;
         }
 
-        /* --- HISTORICAL DATA DROPDOWN --- */
+        /* --- HISTORICAL DATA DROPDOWN & REFRESH BUTTON --- */
         #historical-data {
             position: absolute;
             top: 20px;
             right: 50px;
             z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         #historical-data select {
             background-color: rgba(255, 255, 255, 0.2);
@@ -104,6 +107,50 @@
         #historical-data select:focus {
             outline: none;
             border-color: var(--color-accent);
+        }
+        #refresh-data {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: var(--color-text-light);
+            border: 1px solid var(--color-gold);
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-family: var(--font-heading);
+            font-size: clamp(14px, 1.2vw, 18px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        #refresh-data:hover {
+            background-color: rgba(255, 215, 0, 0.3);
+            transform: rotate(180deg);
+        }
+        #refresh-data:active {
+            transform: rotate(360deg);
+        }
+        #data-source-indicator {
+            font-size: clamp(10px, 0.9vw, 14px);
+            color: var(--color-gold);
+            margin-bottom: 5px;
+            opacity: 0.8;
+            font-family: var(--font-primary);
+        }
+
+        /* --- LIVE DATA DISCLAIMER --- */
+        #live-data-notice {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 34, 68, 0.9);
+            border: 1px solid var(--color-gold);
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: clamp(9px, 0.8vw, 12px);
+            color: var(--color-text-light);
+            opacity: 0.7;
+            z-index: 100;
+            font-family: var(--font-primary);
+            max-width: 90%;
+            text-align: center;
         }
 
         /* --- CUSTOM TOOLTIP CSS --- */
@@ -349,12 +396,13 @@
             <option value="2020-summer">Tokyo 2020 (Summer)</option>
             <option value="2018-winter">PyeongChang 2018 (Winter)</option>
         </select>
+        <button id="refresh-data" title="Refresh data from APIs">🔄</button>
     </div>
 
     <div id="dashboard-container">
 
         <div id="schedule" class="panel active">
-            <h1>📅 TODAY'S SCHEDULE</h1>
+            <h1>TODAY'S SCHEDULE</h1>
             <h2>Upcoming Medal Events</h2>
             <ul class="event-list"></ul>
         </div>
@@ -362,12 +410,14 @@
         <div id="medal-tally" class="panel">
             <h1>🏅 MEDAL STANDINGS</h1>
             <h2 id="medal-tally-subtitle">Top 10 Nations (Stacked Bar Chart)</h2>
-            
+
             <div id="view-toggles">
                 <button id="view-stacked" class="view-toggle-button active" data-type="stacked">Stacked View</button>
                 <button id="view-separate" class="view-toggle-button" data-type="separate">Separate View</button>
             </div>
-            
+
+            <div id="data-source-indicator">Loading data...</div>
+
             <div id="medal-tally-chart-container">
                 <canvas id="medalChart"></canvas>
             </div>
@@ -390,9 +440,30 @@
         <button id="speed-toggle" class="control-button">🐢 SLOW SWAP (15s)</button>
     </div>
 
+    <div id="live-data-notice">
+        ℹ️ Near-Live Display: Medal counts update every 5 minutes from Wikipedia. Data may lag official results by 5-15 minutes.
+    </div>
+
     <script>
-        // --- 1. MOCK DATA ---
-        
+        // --- 1. DATA SOURCES & CACHING ---
+
+        const DATA_SOURCES = {
+            WIKIPEDIA: 'wikipedia',
+            CODANTE: 'codante',
+            MOCK: 'mock'
+        };
+
+        let currentDataSource = DATA_SOURCES.MOCK;
+        let lastDataUpdate = null;
+        let dataCache = {
+            '2026-current': null,
+            '2022-winter': null,
+            '2020-summer': null,
+            '2018-winter': null
+        };
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+        // MOCK DATA (Fallback)
         const MOCK_DATA_2026 = [
             { rank: 1, country: "Norway", code: "NOR", G: 16, S: 8, B: 13, T: 37 },
             { rank: 2, country: "Germany", code: "GER", G: 12, S: 10, B: 5, T: 27 },
@@ -433,21 +504,231 @@
         ].sort((a, b) => b.T - a.T);
         
         const scheduleData = [
-            { sport: "Alpine Skiing", event: "Women's Downhill Final", time: "09:30 AM CET" },
-            { sport: "Curling", event: "Men's Gold Medal Match", time: "11:00 AM CET" },
-            { sport: "Biathlon", event: "Mixed 4x6km Relay", time: "01:30 PM CET" },
-            { sport: "Figure Skating", event: "Ice Dance Free Skate", time: "03:00 PM CET" },
-            { sport: "Speed Skating", event: "Men's 500m Final", time: "04:30 PM CET" },
-            { sport: "Bobsleigh", event: "Women's Monobob Run 3", time: "06:00 PM CET" },
-            { sport: "Ice Hockey", event: "Men's Group A: SWE vs FIN", time: "08:00 PM CET" }
+            { sport: "Alpine Skiing", event: "Men's Downhill - GOLD MEDAL", time: "5:30 AM ET", date: "Feb 7" },
+            { sport: "Snowboard", event: "Women's Slopestyle Final - GOLD MEDAL", time: "6:00 AM ET", date: "Feb 7" },
+            { sport: "Cross-Country", event: "Women's 10km+10km Skiathlon - GOLD MEDAL", time: "7:00 AM ET", date: "Feb 7" },
+            { sport: "Ski Jumping", event: "Men's Normal Hill Individual - GOLD MEDAL", time: "8:30 AM ET", date: "Feb 7" },
+            { sport: "Speed Skating", event: "Women's 3000m Final - GOLD MEDAL", time: "9:00 AM ET", date: "Feb 7" },
+            { sport: "Freestyle Skiing", event: "Women's Moguls Final - GOLD MEDAL", time: "11:00 AM ET", date: "Feb 7" },
+            { sport: "Figure Skating", event: "Team Event - Short Programs", time: "2:00 PM ET", date: "Feb 7" }
         ];
+
+        // --- API FETCHING FUNCTIONS ---
+
+        async function fetchWikipediaMedalData(eventKey) {
+            try {
+                const pageMap = {
+                    '2026-current': '2026_Winter_Olympics',
+                    '2022-winter': '2022_Winter_Olympics',
+                    '2020-summer': '2020_Summer_Olympics',
+                    '2018-winter': '2018_Winter_Olympics'
+                };
+
+                const page = pageMap[eventKey];
+                if (!page) return null;
+
+                const url = `https://en.wikipedia.org/api/rest_v1/page/html/${page}`;
+                const response = await fetch(url, {
+                    headers: {
+                        'User-Agent': 'Milano-Cortina-2026-Kiosk/1.0',
+                        'Api-User-Agent': 'Milano-Cortina-2026-Kiosk/1.0'
+                    }
+                });
+
+                if (!response.ok) throw new Error(`Wikipedia API error: ${response.status}`);
+
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // Find medal table (usually has class "wikitable" and contains "Medal")
+                const tables = doc.querySelectorAll('table.wikitable');
+                let medalTable = null;
+
+                for (let table of tables) {
+                    const text = table.textContent.toLowerCase();
+                    if ((text.includes('medal') || text.includes('rank')) &&
+                        (text.includes('gold') || text.includes('silver'))) {
+                        medalTable = table;
+                        break;
+                    }
+                }
+
+                if (!medalTable) {
+                    console.log('No medal table found in Wikipedia page');
+                    return null;
+                }
+
+                // Parse table rows
+                const rows = medalTable.querySelectorAll('tr');
+                const medalData = [];
+
+                for (let i = 1; i < rows.length && medalData.length < 10; i++) {
+                    const cells = rows[i].querySelectorAll('th, td');
+                    if (cells.length < 5) continue;
+
+                    // Extract rank, country, code, and medals
+                    const rankText = cells[0]?.textContent.trim();
+                    const countryText = cells[1]?.textContent.trim();
+                    const gold = parseInt(cells[2]?.textContent.trim()) || 0;
+                    const silver = parseInt(cells[3]?.textContent.trim()) || 0;
+                    const bronze = parseInt(cells[4]?.textContent.trim()) || 0;
+                    const total = parseInt(cells[5]?.textContent.trim()) || (gold + silver + bronze);
+
+                    if (!countryText || isNaN(gold)) continue;
+
+                    // Extract country code (usually in parentheses or as abbreviation)
+                    const codeMatch = countryText.match(/\(([A-Z]{3})\)/);
+                    let code = codeMatch ? codeMatch[1] : '';
+
+                    // Clean country name
+                    let country = countryText.replace(/\([^)]*\)/g, '').trim();
+                    country = country.replace(/\[.*?\]/g, '').trim();
+
+                    // Try to infer code from country name if not found
+                    if (!code) {
+                        code = inferCountryCode(country);
+                    }
+
+                    medalData.push({
+                        rank: parseInt(rankText) || (i),
+                        country: country,
+                        code: code,
+                        G: gold,
+                        S: silver,
+                        B: bronze,
+                        T: total
+                    });
+                }
+
+                if (medalData.length > 0) {
+                    console.log(`Fetched ${medalData.length} countries from Wikipedia for ${eventKey}`);
+                    currentDataSource = DATA_SOURCES.WIKIPEDIA;
+                    return medalData;
+                }
+
+                return null;
+            } catch (error) {
+                console.error('Wikipedia fetch error:', error);
+                return null;
+            }
+        }
+
+        async function fetchCodanteData(eventKey) {
+            try {
+                // Codante.io currently only has 2024 data, but we'll try anyway
+                const response = await fetch('https://apis.codante.io/olympic-games/countries', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error(`Codante API error: ${response.status}`);
+
+                const data = await response.json();
+
+                if (!data || !data.data) return null;
+
+                // Convert Codante format to our format
+                const medalData = data.data
+                    .sort((a, b) => (b.gold_medals + b.silver_medals + b.bronze_medals) -
+                                     (a.gold_medals + a.silver_medals + a.bronze_medals))
+                    .slice(0, 10)
+                    .map((country, index) => ({
+                        rank: index + 1,
+                        country: country.name,
+                        code: country.id,
+                        G: country.gold_medals || 0,
+                        S: country.silver_medals || 0,
+                        B: country.bronze_medals || 0,
+                        T: (country.gold_medals || 0) + (country.silver_medals || 0) + (country.bronze_medals || 0)
+                    }));
+
+                if (medalData.length > 0) {
+                    console.log(`Fetched ${medalData.length} countries from Codante.io`);
+                    currentDataSource = DATA_SOURCES.CODANTE;
+                    return medalData;
+                }
+
+                return null;
+            } catch (error) {
+                console.error('Codante fetch error:', error);
+                return null;
+            }
+        }
+
+        function inferCountryCode(countryName) {
+            const countryMap = {
+                'norway': 'NOR', 'germany': 'GER', 'canada': 'CAN', 'united states': 'USA',
+                'sweden': 'SWE', 'austria': 'AUT', 'italy': 'ITA', 'japan': 'JPN',
+                'netherlands': 'NED', 'china': 'CHN', 'switzerland': 'SUI', 'russia': 'RUS',
+                'russian olympic committee': 'ROC', 'roc': 'ROC', 'france': 'FRA',
+                'great britain': 'GBR', 'australia': 'AUS', 'south korea': 'KOR',
+                'republic of korea': 'KOR', 'finland': 'FIN', 'spain': 'ESP',
+                'czech republic': 'CZE', 'poland': 'POL', 'new zealand': 'NZL'
+            };
+            return countryMap[countryName.toLowerCase()] || countryName.substring(0, 3).toUpperCase();
+        }
+
+        async function fetchMedalData(eventKey, forceRefresh = false) {
+            // Check cache first
+            if (!forceRefresh && dataCache[eventKey]) {
+                const cacheAge = Date.now() - dataCache[eventKey].timestamp;
+                if (cacheAge < CACHE_DURATION) {
+                    console.log(`Using cached data for ${eventKey} (age: ${Math.round(cacheAge/1000)}s)`);
+                    currentDataSource = dataCache[eventKey].source;
+                    lastDataUpdate = dataCache[eventKey].timestamp;
+                    return dataCache[eventKey].data;
+                }
+            }
+
+            // Try Wikipedia first
+            console.log(`Fetching fresh data for ${eventKey} from Wikipedia...`);
+            let data = await fetchWikipediaMedalData(eventKey);
+
+            // Fallback to Codante for 2024 data
+            if (!data && eventKey === '2020-summer') {
+                console.log('Wikipedia failed, trying Codante.io...');
+                data = await fetchCodanteData(eventKey);
+            }
+
+            // Fallback to mock data
+            if (!data) {
+                console.log('All APIs failed, using mock data');
+                currentDataSource = DATA_SOURCES.MOCK;
+                data = getMockData(eventKey);
+            }
+
+            // Cache the result
+            if (data) {
+                dataCache[eventKey] = {
+                    data: data,
+                    timestamp: Date.now(),
+                    source: currentDataSource
+                };
+                lastDataUpdate = Date.now();
+            }
+
+            return data;
+        }
+
+        function getMockData(eventKey) {
+            switch (eventKey) {
+                case '2022-winter': return MOCK_DATA_2022;
+                case '2020-summer': return MOCK_DATA_2020;
+                case '2018-winter': return MOCK_DATA_2022; // Using 2022 as placeholder
+                case '2026-current':
+                default: return MOCK_DATA_2026;
+            }
+        }
 
         function getFlagEmoji(code) {
             const flags = {
                 'NOR': '🇳🇴', 'GER': '🇩🇪', 'CAN': '🇨🇦', 'USA': '🇺🇸', 'SWE': '🇸🇪',
                 'AUT': '🇦🇹', 'ITA': '🇮🇹', 'JPN': '🇯🇵', 'NED': '🇳🇱', 'CHN': '🇨🇳',
                 'SUI': '🇨🇭', 'RUS': '🇷🇺', 'FRA': '🇫🇷', 'GBR': '🇬🇧', 'AUS': '🇦🇺',
-                'KOR': '🇰🇷'
+                'KOR': '🇰🇷', 'ROC': '🇷🇺', 'FIN': '🇫🇮', 'ESP': '🇪🇸', 'CZE': '🇨🇿',
+                'POL': '🇵🇱', 'NZL': '🇳🇿'
             };
             return flags[code] || '🚩';
         }
@@ -536,34 +817,79 @@
 
 
         // --- 2. DATA RENDERING FUNCTIONS ---
-        
-        function loadHistoricalData(eventKey, chartType = currentChartType) {
+
+        async function loadHistoricalData(eventKey, chartType = currentChartType, forceRefresh = false) {
             currentChartDataKey = eventKey;
-            let data;
             let title;
+
+            // Show loading indicator
+            updateDataSourceIndicator('loading');
 
             switch (eventKey) {
                 case '2022-winter':
-                    data = MOCK_DATA_2022;
                     title = "Beijing 2022 Medal Count (Winter)";
                     break;
                 case '2020-summer':
-                    data = MOCK_DATA_2020;
                     title = "Tokyo 2020 Medal Count (Summer)";
                     break;
                 case '2018-winter':
-                    data = MOCK_DATA_2022; // Using 2022 data as placeholder for 2018
                     title = "PyeongChang 2018 Medal Count (Winter)";
                     break;
                 case '2026-current':
                 default:
-                    data = MOCK_DATA_2026;
                     title = "Top 10 Nations";
                     break;
             }
-            
-            document.getElementById('medal-tally-subtitle').textContent = `${title} (${chartType === 'stacked' ? 'Stacked Bar' : 'Grouped Bars'})`;
-            renderMedalTally(data, chartType);
+
+            try {
+                const data = await fetchMedalData(eventKey, forceRefresh);
+                document.getElementById('medal-tally-subtitle').textContent = `${title} (${chartType === 'stacked' ? 'Stacked Bar' : 'Grouped Bars'})`;
+                renderMedalTally(data, chartType);
+                updateDataSourceIndicator('success');
+            } catch (error) {
+                console.error('Error loading data:', error);
+                const fallbackData = getMockData(eventKey);
+                renderMedalTally(fallbackData, chartType);
+                updateDataSourceIndicator('error');
+            }
+        }
+
+        function updateDataSourceIndicator(status) {
+            const indicator = document.getElementById('data-source-indicator');
+            if (!indicator) return;
+
+            let sourceText = '';
+            let statusIcon = '';
+
+            if (status === 'loading') {
+                sourceText = 'Loading...';
+                statusIcon = '⏳';
+            } else if (status === 'error') {
+                sourceText = 'Using fallback data';
+                statusIcon = '⚠️';
+            } else {
+                switch (currentDataSource) {
+                    case DATA_SOURCES.WIKIPEDIA:
+                        sourceText = 'Wikipedia';
+                        statusIcon = '✓';
+                        break;
+                    case DATA_SOURCES.CODANTE:
+                        sourceText = 'Codante.io API';
+                        statusIcon = '✓';
+                        break;
+                    case DATA_SOURCES.MOCK:
+                        sourceText = 'Mock Data';
+                        statusIcon = 'ℹ️';
+                        break;
+                }
+
+                if (lastDataUpdate) {
+                    const minutesAgo = Math.round((Date.now() - lastDataUpdate) / 60000);
+                    sourceText += ` (${minutesAgo}m ago)`;
+                }
+            }
+
+            indicator.innerHTML = `${statusIcon} ${sourceText}`;
         }
 
         function renderMedalTally(currentData = MOCK_DATA_2026, chartType = currentChartType) {
@@ -672,7 +998,7 @@
                 const listItem = document.createElement('li');
                 listItem.innerHTML = `
                     <span class="sport">${event.sport}: ${event.event}</span>
-                    <span class="time">${event.time}</span>
+                    <span class="time">${event.date} • ${event.time}</span>
                 `;
                 list.appendChild(listItem);
             });
@@ -745,13 +1071,16 @@
             
             panels[currentPanelIndex].classList.add('active');
 
-            // Hide/Show dropdown based on panel
+            // Hide/Show dropdown and controls based on panel
             if (panels[currentPanelIndex].id === 'medal-tally') {
                 eventSelector.style.display = 'block';
                 document.getElementById('view-toggles').style.display = 'block';
+                document.getElementById('refresh-data').style.display = 'inline-block';
+                updateDataSourceIndicator('success');
             } else {
                 eventSelector.style.display = 'none';
                 document.getElementById('view-toggles').style.display = 'none';
+                document.getElementById('refresh-data').style.display = 'none';
                 document.getElementById('chartjs-tooltip').style.opacity = 0; // Hide tooltip on panel switch
             }
 
@@ -795,7 +1124,16 @@
         eventSelector.addEventListener('change', (e) => {
             loadHistoricalData(e.target.value, currentChartType);
         });
-        
+
+        // Refresh button handler
+        const refreshButton = document.getElementById('refresh-data');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', () => {
+                console.log('Manual refresh triggered');
+                loadHistoricalData(currentChartDataKey, currentChartType, true);
+            });
+        }
+
         // View Toggle Logic
         toggleButtons.forEach(button => {
             button.addEventListener('click', function() {
@@ -804,7 +1142,7 @@
                     // Update button classes
                     toggleButtons.forEach(btn => btn.classList.remove('active'));
                     this.classList.add('active');
-                    
+
                     // Re-render chart with new view type
                     loadHistoricalData(currentChartDataKey, newType);
                 }
@@ -819,13 +1157,30 @@
             loadHistoricalData('2026-current', currentChartType);
             updateCountdown();
             startRotation();
-            
+
             eventSelector.style.display = 'none';
             document.getElementById('view-toggles').style.display = 'none';
-            
-            setInterval(updateCountdown, 1000); 
+            document.getElementById('refresh-data').style.display = 'none';
+
+            setInterval(updateCountdown, 1000);
+
+            // Auto-refresh data every 5 minutes
+            setInterval(() => {
+                if (panels[currentPanelIndex].id === 'medal-tally') {
+                    console.log('Auto-refreshing medal data...');
+                    loadHistoricalData(currentChartDataKey, currentChartType, true);
+                }
+            }, CACHE_DURATION);
+
+            // Update data source indicator every minute
+            setInterval(() => {
+                if (panels[currentPanelIndex].id === 'medal-tally') {
+                    updateDataSourceIndicator('success');
+                }
+            }, 60000);
+
             // Re-render chart on resize to maintain responsiveness and reset fonts
-            window.addEventListener('resize', () => loadHistoricalData(currentChartDataKey, currentChartType)); 
+            window.addEventListener('resize', () => loadHistoricalData(currentChartDataKey, currentChartType));
         }
 
         document.addEventListener('DOMContentLoaded', initDashboard);
