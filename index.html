@@ -383,7 +383,7 @@
     <div id="dashboard-container">
 
         <div id="schedule" class="panel active">
-            <h1>📅 TODAY'S SCHEDULE</h1>
+            <h1>TODAY'S SCHEDULE</h1>
             <h2>Upcoming Medal Events</h2>
             <ul class="event-list"></ul>
         </div>
@@ -481,13 +481,13 @@
         ].sort((a, b) => b.T - a.T);
         
         const scheduleData = [
-            { sport: "Alpine Skiing", event: "Women's Downhill Final", time: "09:30 AM CET" },
-            { sport: "Curling", event: "Men's Gold Medal Match", time: "11:00 AM CET" },
-            { sport: "Biathlon", event: "Mixed 4x6km Relay", time: "01:30 PM CET" },
-            { sport: "Figure Skating", event: "Ice Dance Free Skate", time: "03:00 PM CET" },
-            { sport: "Speed Skating", event: "Men's 500m Final", time: "04:30 PM CET" },
-            { sport: "Bobsleigh", event: "Women's Monobob Run 3", time: "06:00 PM CET" },
-            { sport: "Ice Hockey", event: "Men's Group A: SWE vs FIN", time: "08:00 PM CET" }
+            { sport: "Alpine Skiing", event: "Women's Downhill Final", time: "3:30 AM ET", date: "Feb 15" },
+            { sport: "Curling", event: "Men's Gold Medal Match", time: "5:00 AM ET", date: "Feb 15" },
+            { sport: "Biathlon", event: "Mixed 4x6km Relay", time: "7:30 AM ET", date: "Feb 15" },
+            { sport: "Figure Skating", event: "Ice Dance Free Skate", time: "9:00 AM ET", date: "Feb 15" },
+            { sport: "Speed Skating", event: "Men's 500m Final", time: "10:30 AM ET", date: "Feb 15" },
+            { sport: "Bobsleigh", event: "Women's Monobob Run 3", time: "12:00 PM ET", date: "Feb 15" },
+            { sport: "Ice Hockey", event: "Men's Group A: SWE vs FIN", time: "2:00 PM ET", date: "Feb 15" }
         ];
 
         // --- API FETCHING FUNCTIONS ---
@@ -975,7 +975,7 @@
                 const listItem = document.createElement('li');
                 listItem.innerHTML = `
                     <span class="sport">${event.sport}: ${event.event}</span>
-                    <span class="time">${event.time}</span>
+                    <span class="time">${event.date} • ${event.time}</span>
                 `;
                 list.appendChild(listItem);
             });
